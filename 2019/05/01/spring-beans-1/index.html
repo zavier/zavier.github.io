@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: true,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="spring-beans虽然是一个很基础的包，但是它已经包括了很多的功能，我们先看下如何在只使用spring-beans包的情况下，解析并拿到xml中配置的bean实例 spring-bean.xml 12345678&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;&amp;lt;beans xmlns=&quot;http://www.springframework.org">
+<meta name="keywords" content="java,spring">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring Bean 中 Bean解析创建过程（上）">
+<meta property="og:url" content="https://zhengw-tech.com/2019/05/01/spring-beans-1/index.html">
+<meta property="og:site_name" content="个人网页">
+<meta property="og:description" content="spring-beans虽然是一个很基础的包，但是它已经包括了很多的功能，我们先看下如何在只使用spring-beans包的情况下，解析并拿到xml中配置的bean实例 spring-bean.xml 12345678&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;&amp;lt;beans xmlns=&quot;http://www.springframework.org">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://zhengw-tech.com/images/DefaultListableBeanFactory.png">
+<meta property="og:updated_time" content="2022-02-07T05:08:05.703Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spring Bean 中 Bean解析创建过程（上）">
+<meta name="twitter:description" content="spring-beans虽然是一个很基础的包，但是它已经包括了很多的功能，我们先看下如何在只使用spring-beans包的情况下，解析并拿到xml中配置的bean实例 spring-bean.xml 12345678&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;&amp;lt;beans xmlns=&quot;http://www.springframework.org">
+<meta name="twitter:image" content="https://zhengw-tech.com/images/DefaultListableBeanFactory.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://zhengw-tech.com/2019/05/01/spring-beans-1/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Spring Bean 中 Bean解析创建过程（上） | 个人网页</title>
+  
+
+
+
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-163916658-1"></script>
+  <script>
+    var host = window.location.hostname;
+    if (host !== "localhost" || !true) {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-163916658-1');
+    }
+  </script>
+
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d7e9ac20bfcbf1d8dff4cffb8eaa5caf";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">个人网页</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签<span class="badge">42</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档<span class="badge">60</span></a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+  
+  
+
+  
+
+  <a href="https://github.com/zavier" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewbox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a>
+
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://zhengw-tech.com/2019/05/01/spring-beans-1/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="郑伟">
+      <meta itemprop="description" content="学习笔记">
+      <meta itemprop="image" content="/images/weixin.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="个人网页">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Spring Bean 中 Bean解析创建过程（上）
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-05-01 17:59:43" itemprop="dateCreated datePublished" datetime="2019-05-01T17:59:43+08:00">2019-05-01</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2022-02-07 13:08:05" itemprop="dateModified" datetime="2022-02-07T13:08:05+08:00">2022-02-07</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             阅读次数： 
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>spring-beans虽然是一个很基础的包，但是它已经包括了很多的功能，我们先看下如何在只使用spring-beans包的情况下，解析并拿到xml中配置的bean实例</p>
+<p>spring-bean.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">beans</span> <span class="attr">xmlns</span>=<span class="string">"http://www.springframework.org/schema/beans"</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xmlns:xsi</span>=<span class="string">"http://www.w3.org/2001/XMLSchema-instance"</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xsi:schemaLocation</span>=<span class="string">"http://www.springframework.org/schema/beans 			                http://www.springframework.org/schema/beans/spring-beans.xsd"</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">class</span>=<span class="string">"com.zavier.spring.beans.SimpleBean"</span> <span class="attr">id</span>=<span class="string">"simpleBean"</span> /&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>解析代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1.创建一个BeanFactory</span></span><br><span class="line">DefaultListableBeanFactory beanFactory = <span class="keyword">new</span> DefaultListableBeanFactory();</span><br><span class="line"><span class="comment">// 2.创建读取Bean定义的Reader</span></span><br><span class="line">XmlBeanDefinitionReader beanDefinitionReader = <span class="keyword">new</span> XmlBeanDefinitionReader(beanFactory);</span><br><span class="line"><span class="comment">// 3.使用Reader来读取指定的资源信息</span></span><br><span class="line">ClassPathResource resource = <span class="keyword">new</span> ClassPathResource(<span class="string">"spring-bean.xml"</span>);</span><br><span class="line">beanDefinitionReader.loadBeanDefinitions(resource);</span><br><span class="line"><span class="comment">// 4.之后就可以从工厂中正常获取对应的bean实例</span></span><br><span class="line">SimpleBean bean = beanFactory.getBean(SimpleBean.class);</span><br></pre></td></tr></table></figure>
+<a id="more"></a>
+<p>让我们来一步一步分析一下上面几行代码的底层的实际执行逻辑</p>
+<p>先看一下最重要的BeanFactory实现类 <code>DefaultListableBeanFactory</code>的继承关系</p>
+<p><img src="/images/DefaultListableBeanFactory.png" alt=""></p>
+<p>在这个图中，我们能看出其主要是实现了两个接口</p>
+<ul>
+<li>BeanFactory  - Bean的工厂类，负责创建Bean实例等</li>
+<li>BeanDefinitionRegistry - Bean定义的注册器，可以将Bean的定义信息注册到其中</li>
+</ul>
+<p>DefaultListableBeanFactory实现后，就可以通过beanDefinitionReader读取解析xml等配置文件中的信息，将Bean的信息BeanDefinition通过registry注册，之后可以通过 beanFactory创建bean</p>
+<p>这篇文章中我们先看一下Bean信息的读取注册过程，也就是BeanDefinitionRegistry 接口的功能实现</p>
+<p>先看一下 <code>XmlBeanDefinitionReader</code>具体是如何解析xml文件，并将配置的bean信息注册给registry呢</p>
+<p>XmlBeanDefinitionReader.loadBeanDefinition</p>
+<p>​    委托给 DefaultBeanDefinitionDocumentReader.registerBeanDefinition</p>
+<p>​        委托给 BeanDefinitionParserDelegate 负责最终的处理</p>
+<p>而BeanDefinitionParseDelegate对于默认的标签（bean、import、alias等）和自定义的标签有不同的处理逻辑</p>
+<h3 id="一、自定义标签"><a href="#一、自定义标签" class="headerlink" title="一、自定义标签"></a>一、自定义标签</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 对应的方法如下，用来处理如 &lt;mvc:annotation-driven /&gt; 之类的其他命名空间的标签</span></span><br><span class="line"><span class="comment">// 这次我们先不进入细看，感兴趣的可以进入看下</span></span><br><span class="line">delegate.parseCustomElement(root)</span><br></pre></td></tr></table></figure>
+<h3 id="二、-beans默认标签（bean、import、alias等）"><a href="#二、-beans默认标签（bean、import、alias等）" class="headerlink" title="二、 beans默认标签（bean、import、alias等）"></a>二、 beans默认标签（bean、import、alias等）</h3><p>BeanDefinitionParserDelegate的parseBeanDefinitionElement方法，它的执行流程大体如下</p>
+<p>1.解析bean标签中的ID和name属性，将beanName=id，并校验次beanName是否已经存在</p>
+<p>2.解析bean标签中的class等属性，创建 AbstractBeanDefinition (Bean的定义包装类)</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GenericBeanDefinition bd = <span class="keyword">new</span> GenericBeanDefinition();</span><br><span class="line">bd.setBeanClass(ClassUtils.forName(className, classLoader));</span><br></pre></td></tr></table></figure>
+<p>3.解析bean标签属性(scope, lazy-init, init-method, destroy-method等)，并赋值给AbstractBeanDefinition中对应的属性</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// BeanDefinitionParserDelegate.parseBeanDefinitionAttributes方法</span></span><br><span class="line">AbstractBeanDefinition bd = ...;</span><br><span class="line">bd.setScope(..);</span><br><span class="line">bd.setAbstract(..);</span><br><span class="line">bd.setLazyInit(..);</span><br><span class="line">bd.setAutowireMode(..);</span><br><span class="line">bd.setDependencyCheck(..);</span><br><span class="line">bd.setDependsOn(..);</span><br><span class="line">bd.setAutowireCandidate(..);</span><br><span class="line">bd.setPrimary(..);</span><br><span class="line">bd.setInitMethodName(..);</span><br><span class="line">bd.setDestroyMethodName(..);</span><br><span class="line">bd.setFactoryMethodName(..);</span><br><span class="line">bd.setFactoryBeanName(..);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 同时，我们可以简单看下AbstractBeanDefinition中包含的主要属性</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AbstractBeanDefinition</span> <span class="keyword">extends</span> <span class="title">BeanMetadataAttributeAccessor</span></span></span><br><span class="line"><span class="class">		<span class="keyword">implements</span> <span class="title">BeanDefinition</span>, <span class="title">Cloneable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> Object beanClass;  <span class="comment">// bean的实际class</span></span><br><span class="line">    <span class="keyword">private</span> String scope = SCOPE_DEFAULT;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> abstractFlag = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> lazyInit = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> autowireMode = AUTOWIRE_NO;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> dependencyCheck = DEPENDENCY_CHECK_NONE;</span><br><span class="line">    <span class="keyword">private</span> String[] dependsOn;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> autowireCandidate = <span class="keyword">true</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> primary = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, AutowireCandidateQualifier&gt; qualifiers =</span><br><span class="line">    		<span class="keyword">new</span> LinkedHashMap&lt;String, AutowireCandidateQualifier&gt;(<span class="number">0</span>);</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> nonPublicAccessAllowed = <span class="keyword">true</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> lenientConstructorResolution = <span class="keyword">true</span>;</span><br><span class="line">    <span class="keyword">private</span> String factoryBeanName;</span><br><span class="line">    <span class="keyword">private</span> String factoryMethodName;</span><br><span class="line">    <span class="keyword">private</span> ConstructorArgumentValues constructorArgumentValues;</span><br><span class="line">    <span class="keyword">private</span> MutablePropertyValues propertyValues;</span><br><span class="line">    <span class="keyword">private</span> MethodOverrides methodOverrides = <span class="keyword">new</span> MethodOverrides();</span><br><span class="line">    <span class="keyword">private</span> String initMethodName;</span><br><span class="line">    <span class="keyword">private</span> String destroyMethodName;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> enforceInitMethod = <span class="keyword">true</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> enforceDestroyMethod = <span class="keyword">true</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> synthetic = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> role = BeanDefinition.ROLE_APPLICATION;</span><br><span class="line">    <span class="keyword">private</span> String description;</span><br><span class="line">    <span class="keyword">private</span> Resource resource;    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>4.处理bean标签中的子标签，如constructor-args, property等，并赋值给AbstractBeanDefinition中对应的属性</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">AbstractBeanDefinition bd = ...;</span><br><span class="line">bd.setConstructorArgumentValues(..);  <span class="comment">// constructor-args</span></span><br><span class="line">bd.setPropertyValues(..);  <span class="comment">// property</span></span><br></pre></td></tr></table></figure>
+<p>5.创建BeanDefinitionHolder(对BeanDefinition的包装类，主要是包含了 alias属性)</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">new</span> BeanDefinitionHolder(beanDefinition, beanName, aliasesArray);</span><br><span class="line"></span><br><span class="line"><span class="comment">// BeanDefinitionHolder 的定义</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BeanDefinitionHolder</span> <span class="keyword">implements</span> <span class="title">BeanMetadataElement</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> BeanDefinition beanDefinition;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String beanName;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String[] aliases;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>6.最后调用BeanDefinitionReaderUtils.registerBeanDefinition注册到DefaultListableBeanFactory</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">registerBeanDefinition</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    BeanDefinitionHolder definitionHolder, BeanDefinitionRegistry registry)</span></span></span><br><span class="line"><span class="function">    <span class="keyword">throws</span> BeanDefinitionStoreException </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Register bean definition under primary name.</span></span><br><span class="line">    String beanName = definitionHolder.getBeanName();</span><br><span class="line">    registry.registerBeanDefinition(beanName, definitionHolder.getBeanDefinition());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Register aliases for bean name, if any.</span></span><br><span class="line">    String[] aliases = definitionHolder.getAliases();</span><br><span class="line">    <span class="keyword">if</span> (aliases != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (String alias : aliases) &#123;</span><br><span class="line">            registry.registerAlias(beanName, alias);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// DefaultListableBeanFactory 对应的存储结构</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, BeanDefinition&gt; beanDefinitionMap = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;(<span class="number">256</span>);</span><br></pre></td></tr></table></figure>
+<p>至此，我们就完成了一个xml文件的读取，解析并赋值给DefaultListableBeanFactory（BeanDefinitionRegistry接口的实现）的过程</p>
+<p>之前我们说过 DefaultListableBeanFactory 主要实现的是两个接口，BeanDefinitionRegistry与 BeanFactory，现在我们只说了BeanDefinitionRegistry 读取注册Bean相关的功能，下一篇我们来接续讲解一下BeanFactory也是bean实例创建的部分，谢谢～</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        
+          
+        
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/spring/" rel="tag"># spring</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/31/mybatis-spring/" rel="next" title="MyBatis-Spring配置及使用">
+                <i class="fa fa-chevron-left"></i> MyBatis-Spring配置及使用
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/05/04/spring-beans-2/" rel="prev" title="Spring Bean 中 Bean解析创建过程（下）">
+                Spring Bean 中 Bean解析创建过程（下） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/weixin.jpg" alt="郑伟">
+            
+              <p class="site-author-name" itemprop="name">郑伟</p>
+              <div class="site-description motion-element" itemprop="description">学习笔记</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">60</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">39</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/zavier" title="GitHub &rarr; https://github.com/zavier" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:765324639@gmail.com" title="E-Mail &rarr; mailto:765324639@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#一、自定义标签"><span class="nav-number">1.</span> <span class="nav-text">一、自定义标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二、-beans默认标签（bean、import、alias等）"><span class="nav-number">2.</span> <span class="nav-text">二、 beans默认标签（bean、import、alias等）</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">  <a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">黑ICP备19000073号-1 </a>&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">郑伟</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

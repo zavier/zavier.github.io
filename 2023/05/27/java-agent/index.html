@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: true,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="在介绍Java agent之前，我们先来介绍一下一个比较关键的概念 - 字节码，这个如果大家已经比较熟悉了，可以直接跳到 java agent部分 字节码我们知道Java编写的程序是可以不做任何修改的在不同的操作系统上面运行，也就是跨平台的，但是要想实现跨平台，就是需要能屏蔽掉不同操作系统之间api等的差异 比如说常见的创建线程，linux和window系统提供的接口就不一样 1234567891">
+<meta name="keywords" content="java,agent">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JavaAgent使用及原理">
+<meta property="og:url" content="https://zhengw-tech.com/2023/05/27/java-agent/index.html">
+<meta property="og:site_name" content="个人网页">
+<meta property="og:description" content="在介绍Java agent之前，我们先来介绍一下一个比较关键的概念 - 字节码，这个如果大家已经比较熟悉了，可以直接跳到 java agent部分 字节码我们知道Java编写的程序是可以不做任何修改的在不同的操作系统上面运行，也就是跨平台的，但是要想实现跨平台，就是需要能屏蔽掉不同操作系统之间api等的差异 比如说常见的创建线程，linux和window系统提供的接口就不一样 1234567891">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://zhengw-tech.com/images/jvm-class.png">
+<meta property="og:image" content="https://zhengw-tech.com/images/java-agent.png">
+<meta property="og:updated_time" content="2023-06-04T14:26:13.673Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JavaAgent使用及原理">
+<meta name="twitter:description" content="在介绍Java agent之前，我们先来介绍一下一个比较关键的概念 - 字节码，这个如果大家已经比较熟悉了，可以直接跳到 java agent部分 字节码我们知道Java编写的程序是可以不做任何修改的在不同的操作系统上面运行，也就是跨平台的，但是要想实现跨平台，就是需要能屏蔽掉不同操作系统之间api等的差异 比如说常见的创建线程，linux和window系统提供的接口就不一样 1234567891">
+<meta name="twitter:image" content="https://zhengw-tech.com/images/jvm-class.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://zhengw-tech.com/2023/05/27/java-agent/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>JavaAgent使用及原理 | 个人网页</title>
+  
+
+
+
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-163916658-1"></script>
+  <script>
+    var host = window.location.hostname;
+    if (host !== "localhost" || !true) {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-163916658-1');
+    }
+  </script>
+
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d7e9ac20bfcbf1d8dff4cffb8eaa5caf";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">个人网页</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签<span class="badge">42</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档<span class="badge">60</span></a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+  
+  
+
+  
+
+  <a href="https://github.com/zavier" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewbox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a>
+
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://zhengw-tech.com/2023/05/27/java-agent/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="郑伟">
+      <meta itemprop="description" content="学习笔记">
+      <meta itemprop="image" content="/images/weixin.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="个人网页">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JavaAgent使用及原理
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2023-05-27 15:36:50" itemprop="dateCreated datePublished" datetime="2023-05-27T15:36:50+08:00">2023-05-27</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2023-06-04 22:26:13" itemprop="dateModified" datetime="2023-06-04T22:26:13+08:00">2023-06-04</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             阅读次数： 
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在介绍Java agent之前，我们先来介绍一下一个比较关键的概念 - 字节码，这个如果大家已经比较熟悉了，可以直接跳到 java agent部分</p>
+<h3 id="字节码"><a href="#字节码" class="headerlink" title="字节码"></a>字节码</h3><p>我们知道Java编写的程序是可以不做任何修改的在不同的操作系统上面运行，也就是跨平台的，但是要想实现跨平台，就是需要能屏蔽掉不同操作系统之间api等的差异</p>
+<p>比如说常见的创建线程，linux和window系统提供的接口就不一样</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 不同操作系统下，使用c语言创建线程的API</span></span><br><span class="line"><span class="comment">// linux</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">pthread_create</span><span class="params">(<span class="keyword">pthread_t</span> *thread, <span class="keyword">const</span> <span class="keyword">pthread_attr_t</span> *attr,     </span></span></span><br><span class="line"><span class="function"><span class="params">                   <span class="keyword">void</span> *(*start_routine) (<span class="keyword">void</span>*), <span class="keyword">void</span> *arg)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// windows</span></span><br><span class="line"><span class="function">HANDLE <span class="title">CreateThread</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  LPSECURITY_ATTRIBUTES   lpThreadAttributes,</span></span></span><br><span class="line"><span class="function"><span class="params">  SIZE_T                  dwStackSize,</span></span></span><br><span class="line"><span class="function"><span class="params">  LPTHREAD_START_ROUTINE  lpStartAddress,</span></span></span><br><span class="line"><span class="function"><span class="params">  LPVOID                  lpParameter,</span></span></span><br><span class="line"><span class="function"><span class="params">  DWORD                   dwCreationFlags,</span></span></span><br><span class="line"><span class="function"><span class="params">  LPDWORD                 lpThreadId</span></span></span><br><span class="line"><span class="function"><span class="params">)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>除了创建线程，其实还有很多的差异，比如说如果用C语言来实现既能在windows下运行，又能在linux下指定的代码，那么就需要针对有差异的地方，根据不同的操作系统来编写不同的代码，然后在编译的时候根据需要编译成对应系统下的二进制指令，这无疑是很痛苦和低效的方式</p>
+<p>而Java下编译并不会生成目标平台的二进制文件，而是生成一个与平台无关的字节码文件，由不同平台下Java虚拟机负责加载执行，操作系统的差异就需要由虚拟机来进行屏蔽，对开发人员是无感知的</p>
+<p>我们只需要将源代码编译成字节码（而不是操作系统下的二进制格式），剩下的就可以交给虚拟机来识别执行了</p>
+<p><img src="/images/jvm-class.png" style="zoom:60%"></p>
+<p>其实这样还有一个额外的好处，那就是在Java虚拟机上，不仅仅只能支持Java语言，理论上只要是符合规范的字节码文件，它都能执行，至于这个字节码文件是Java语言编译过来的，还是其他语言（如kotlin, groovy）编译过来的并不重要，甚至我们都可以手写字节码来执行～</p>
+<a id="more"></a>
+<p>上面的概念说完了，下面我们来具体编写代码来感受一下字节码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 先来编写一个类，主要有一个 incr方法，对参数进行加一返回</span></span><br><span class="line"><span class="keyword">package</span> com.zavier.agent;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">final</span> Test test = <span class="keyword">new</span> Test();</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> incr = test.incr(<span class="number">5</span>);</span><br><span class="line">        <span class="comment">// 很明显会输出 6</span></span><br><span class="line">        System.out.println(incr);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">incr</span><span class="params">(<span class="keyword">int</span> i)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> i + <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>那么对应的字节码如何查看呢，就是看它编译后的文件以.class结尾的文件<code>Test.class</code>，而这个文件怎么查看呢，一种就是直接以二进制的方式打开，当然，这个人根本是无法阅读的，我贴出来一部分大家感受一下</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">➜  hexdump -C Test.class</span><br><span class="line">00000000  ca fe ba be 00 00 00 34  00 28 0a 00 07 00 1a 07  |.......4.(......|</span><br><span class="line">00000010  00 1b 0a 00 02 00 1a 0a  00 02 00 1c 09 00 1d 00  |................|</span><br><span class="line">00000020  1e 0a 00 1f 00 20 07 00  21 01 00 06 3c 69 6e 69  |..... ..!...&lt;ini|</span><br><span class="line">00000030  74 3e 01 00 03 28 29 56  01 00 04 43 6f 64 65 01  |t&gt;...()V...Code.|</span><br><span class="line">00000040  00 0f 4c 69 6e 65 4e 75  6d 62 65 72 54 61 62 6c  |..LineNumberTabl|</span><br><span class="line">00000050  65 01 00 12 4c 6f 63 61  6c 56 61 72 69 61 62 6c  |e...LocalVariabl|</span><br><span class="line">00000060  65 54 61 62 6c 65 01 00  04 74 68 69 73 01 00 17  |eTable...this...|</span><br><span class="line">00000070  4c 63 6f 6d 2f 7a 61 76  69 65 72 2f 61 67 65 6e  |Lcom/zavier/agen|</span><br><span class="line">00000080  74 2f 54 65 73 74 3b 01  00 04 6d 61 69 6e 01 00  |t/Test;...main..|</span><br></pre></td></tr></table></figure>
+<p>还有一种方式就是使用 JDK提供的反编译字节码的工具 javap，我们来执行一下看看，由于反编译后的内容比较多，这里我贴一下 incr 方法对应的字节码大家看一下</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">➜  javap -v Test         </span><br><span class="line"><span class="meta">#</span> 忽略其他部分，大家有兴趣可以自己试一下</span><br><span class="line">public int incr(int);</span><br><span class="line">  descriptor: (I)I</span><br><span class="line">  flags: ACC_PUBLIC</span><br><span class="line"><span class="meta">  #</span> code部分是对应方法的内容</span><br><span class="line">  Code:</span><br><span class="line">    # 操作数栈有2个元素位，局部变量表有2个元素位，参数有2个（其中一个参数是 this ）</span><br><span class="line">    stack=2, locals=2, args_size=2</span><br><span class="line">       0: iload_1     # 将第一个int类型的本地变量推送到操作数栈顶</span><br><span class="line">       1: iconst_1    # 将 int类型数字 1 推送到操作数栈顶</span><br><span class="line">       2: iadd        # 弹出栈顶两个int类型的数值，相加后将结果压入栈顶</span><br><span class="line">       3: ireturn     # 从当前方法返回 int</span><br><span class="line">    LineNumberTable:</span><br><span class="line">      line 13: 0</span><br><span class="line">    LocalVariableTable:</span><br><span class="line">      Start  Length  Slot  Name   Signature</span><br><span class="line">          0       4     0  this   Lcom/zavier/agent/Test;</span><br><span class="line">          0       4     1     i   I</span><br><span class="line"></span><br><span class="line">SourceFile: "Test.java"</span><br></pre></td></tr></table></figure>
+<p>以上方法的字节码还是比较好理解的，这时候想一下，如果我们将 <code>iconst_1</code>改成<code>iconst_2</code>，那么在运行这个文件，是不是就会变成了加二的操作呢？我们可以来试一下</p>
+<p>字节码文件是有它自己的规范的，我们随便改可能会导致加载异常，而且手动找到对应命令进行修改也确实是一个很麻烦的事情，这时候就需要使用工具来完成了，可选的有很多，如asm, cglib, javassist, bytebuddy等等</p>
+<p>这里使用asm9来实现一下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Transformer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历查找类的</span></span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">MyClassVisitor</span> <span class="keyword">extends</span> <span class="title">ClassVisitor</span> </span>&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">MyClassVisitor</span><span class="params">(<span class="keyword">int</span> i, ClassWriter cw)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">super</span>(i, cw);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> MethodVisitor <span class="title">visitMethod</span><span class="params">(<span class="keyword">int</span> access, String name, String desc, String signature, String[] exceptions)</span> </span>&#123;</span><br><span class="line">            MethodVisitor mv = <span class="keyword">super</span>.visitMethod(access, name, desc, signature, exceptions);</span><br><span class="line">            <span class="comment">// 查找方法，名称为 incr， (I)I 表示参数类型为一个int,返回类型也为int</span></span><br><span class="line">            <span class="keyword">if</span> (name.equals(<span class="string">"incr"</span>) &amp;&amp; desc.equals(<span class="string">"(I)I"</span>)) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">new</span> MyMethodVisitor(Opcodes.ASM9, mv);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> mv;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历查找方法的</span></span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">MyMethodVisitor</span> <span class="keyword">extends</span> <span class="title">MethodVisitor</span> </span>&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">MyMethodVisitor</span><span class="params">(<span class="keyword">int</span> api, MethodVisitor methodVisitor)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">super</span>(api, methodVisitor);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">visitInsn</span><span class="params">(<span class="keyword">int</span> opcode)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (opcode == Opcodes.ICONST_1) &#123;</span><br><span class="line">                <span class="comment">// 如果指定是ICONST_1，则修改为 ICONST_2</span></span><br><span class="line">                <span class="keyword">super</span>.visitInsn(Opcodes.ICONST_2);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">super</span>.visitInsn(opcode);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 使用main方法来执行修改</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="comment">// 读取字节码文件，进行转换</span></span><br><span class="line">        ClassReader cr = <span class="keyword">new</span> ClassReader(<span class="keyword">new</span> FileInputStream(<span class="string">"/path/Test.class"</span>));</span><br><span class="line">        ClassWriter cw = <span class="keyword">new</span> ClassWriter(cr, <span class="number">0</span>);</span><br><span class="line">        ClassVisitor cv = <span class="keyword">new</span> MyClassVisitor(Opcodes.ASM9, cw);</span><br><span class="line">        cr.accept(cv, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">byte</span>[] bytes = cw.toByteArray();  <span class="comment">// 修改后的字节码</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 将转换后的结果输出到文件中</span></span><br><span class="line">        <span class="keyword">final</span> FileOutputStream fileOutputStream = <span class="keyword">new</span> FileOutputStream(<span class="string">"/path/Test.class"</span>);</span><br><span class="line">        fileOutputStream.write(bytes);</span><br><span class="line">        fileOutputStream.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这时候我们再使用javap看一下替换后的字节码内容，可以发现已经替换成功了</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public int incr(int);</span><br><span class="line">  descriptor: (I)I</span><br><span class="line">  flags: ACC_PUBLIC</span><br><span class="line">  Code:</span><br><span class="line">    stack=2, locals=2, args_size=2</span><br><span class="line">       0: iload_1</span><br><span class="line">       1: iconst_2  # 这里已经替换成了 iconst_2</span><br><span class="line">       2: iadd</span><br><span class="line">       3: ireturn</span><br><span class="line">    LineNumberTable:</span><br><span class="line">      line 13: 0</span><br><span class="line">    LocalVariableTable:</span><br><span class="line">      Start  Length  Slot  Name   Signature</span><br><span class="line">          0       4     0  this   Lcom/zavier/agent/Test;</span><br><span class="line">          0       4     1     i   I</span><br></pre></td></tr></table></figure>
+<p>我们再运行一下代码看一看</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">➜ java com.zavier.agent.Test</span><br><span class="line"><span class="meta">#</span> 可以看到main方法运行的结果已经由6变成了7</span><br><span class="line">7</span><br></pre></td></tr></table></figure>
+<p>到这里字节码部分就介绍完了，大家主要记住 字节码是JVM运行的关键就可以了，其中基本包含了我们在源代码中编写的全部内容，我们通过修改字节码甚至可以实现源代码中没有的功能</p>
+<h3 id="JavaAgent"><a href="#JavaAgent" class="headerlink" title="JavaAgent"></a>JavaAgent</h3><p>现在我们开始介绍一下java-agent技术，那么java-agent是做什么的呢？简单理解就是jvm提供的可以在运行时修改字节码的能力，利用这种能力可以做很多事情，如用来记录请求链路（skywalking等）或者录制流量等</p>
+<p><img src="/images/java-agent.png" style="zoom:60%"></p>
+<h4 id="方法声明"><a href="#方法声明" class="headerlink" title="方法声明"></a>方法声明</h4><p>javaagent使用有两种方式，一种是在jvm启动的时候直接指定agent，即需要在对应项目jvm启动时即指定jar包：</p>
+<p> <code>java -javaagent:xxx/agent.jar -jar server.jar</code></p>
+<p>还有一种是在运行时动态挂载agent，这种需要通过java代码来实现动态的挂载</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">VirtualMachine jvm = VirtualMachine.attach(<span class="string">"&lt;要挂载agent到哪个jvm进程的ID&gt;"</span>);</span><br><span class="line">jvm.loadAgent(<span class="string">"/path/agent.java"</span>); <span class="comment">// agent jar包的路径</span></span><br></pre></td></tr></table></figure>
+<p>先看一下启动时指定代理包的写法，它需要声明实现如下的方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">premain</span><span class="params">(String args, Instrumentation instrumentation)</span></span></span><br></pre></td></tr></table></figure>
+<p>如果是动态挂载的方式，则需要声明实现另一个方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">agentmain</span><span class="params">(String agentArgs, Instrumentation inst)</span></span></span><br></pre></td></tr></table></figure>
+<h4 id="方法实现"><a href="#方法实现" class="headerlink" title="方法实现"></a>方法实现</h4><p>两种方式使用起来大同小异，我们看一下大致用法实现</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Agent</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 定义 premain 方法并实现</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">premain</span><span class="params">(String args, Instrumentation instrumentation)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 调用 Instrumentation#addTransformer(java.lang.instrument.ClassFileTransformer)</span></span><br><span class="line">        <span class="comment">// 添加对应的字节码文件转换器，用来对字节码进行转换</span></span><br><span class="line">        instrumentation.addTransformer(<span class="keyword">new</span> LogClassFileTransformer());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 定义 agentmain 方法并实现</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">agentmain</span><span class="params">(String agentArgs, Instrumentation instrumentation)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 同 premain 方法实现</span></span><br><span class="line">        instrumentation.addTransformer(<span class="keyword">new</span> LogClassFileTransformer());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 自定义的字节码文件转换器</span></span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">LogClassFileTransformer</span> <span class="keyword">implements</span> <span class="title">ClassFileTransformer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">byte</span>[] transform(ClassLoader loader, String className, Class&lt;?&gt; classBeingRedefined, ProtectionDomain protectionDomain, <span class="keyword">byte</span>[] classfileBuffer) <span class="keyword">throws</span> IllegalClassFormatException &#123;</span><br><span class="line">            <span class="comment">// 字节码转换的实现逻辑，通过解析原始字节码，进行替换后返回更新后的字节码，达到修改实现的目的</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="打包配置"><a href="#打包配置" class="headerlink" title="打包配置"></a>打包配置</h4><p>不管使用哪种方式，都需要增加一下如下打包的配置</p>
+<ol>
+<li>打包时需要将依赖一起打包</li>
+<li>打的包中的 META-INF目录下的MANIFEST.MF文件中增加如下配置：</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> MANIFEST.MF文件</span><br><span class="line"><span class="meta">#</span> 动态挂载时使用的agent的入口类方法，也就是实现agentmain方法的类</span><br><span class="line">Agent-Class: com.zavier.agent.Agent</span><br><span class="line"><span class="meta">#</span> 是否允许重新定义类</span><br><span class="line">Can-Redefine-Classes: true</span><br><span class="line"><span class="meta">#</span> 是否允许转换类</span><br><span class="line">Can-Retransform-Classes: true</span><br><span class="line"><span class="meta">#</span> 启动时使用的agent的入口类方法，也就是实现premain方法的类</span><br><span class="line">Premain-Class: com.zavier.agent.Agent</span><br></pre></td></tr></table></figure>
+<p>这里我们使用maven的assembly插件来完成上述配置实现，这样在打包时maven自动帮我们完成了全部配置功能</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>maven-assembly-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">descriptorRefs</span>&gt;</span></span><br><span class="line">            <span class="comment">&lt;!-- 生成包含依赖的jar包 --&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">descriptorRef</span>&gt;</span>jar-with-dependencies<span class="tag">&lt;/<span class="name">descriptorRef</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">descriptorRefs</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">finalName</span>&gt;</span>$&#123;project.artifactId&#125;-$&#123;project.version&#125;-full<span class="tag">&lt;/<span class="name">finalName</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">appendAssemblyId</span>&gt;</span>false<span class="tag">&lt;/<span class="name">appendAssemblyId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">archive</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">manifestEntries</span>&gt;</span></span><br><span class="line">                <span class="comment">&lt;!-- 这里的配置和上面的是一一对应的 --&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">Premain-Class</span>&gt;</span>com.zavier.agent.Agent<span class="tag">&lt;/<span class="name">Premain-Class</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">Agent-Class</span>&gt;</span>com.zavier.agent.Agent<span class="tag">&lt;/<span class="name">Agent-Class</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">Can-Redefine-Classes</span>&gt;</span>true<span class="tag">&lt;/<span class="name">Can-Redefine-Classes</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">Can-Retransform-Classes</span>&gt;</span>true<span class="tag">&lt;/<span class="name">Can-Retransform-Classes</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">manifestEntries</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">archive</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">executions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">execution</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">id</span>&gt;</span>assemble-all<span class="tag">&lt;/<span class="name">id</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">phase</span>&gt;</span>package<span class="tag">&lt;/<span class="name">phase</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">goals</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">goal</span>&gt;</span>single<span class="tag">&lt;/<span class="name">goal</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">goals</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">execution</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">executions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h4 id="实现例子"><a href="#实现例子" class="headerlink" title="实现例子"></a>实现例子</h4><p>这次我们用byte-buddy对java-agent的支持，来实现一个记录请求日志的功能</p>
+<ol>
+<li>首先我们新建一个spring boot的项目，随便写下controller, service，然后正常启动项目</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DemoController</span> </span>&#123;</span><br><span class="line">    <span class="meta">@GetMapping</span>(value = <span class="string">"/sayHello"</span>)</span><br><span class="line">    <span class="function"><span class="keyword">public</span> User <span class="title">sayHello</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">final</span> User user = demoService.sayHello(name);</span><br><span class="line">        <span class="keyword">return</span> user;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DemoService</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> User <span class="title">sayHello</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">final</span> User user = <span class="keyword">new</span> User();</span><br><span class="line">        user.setName(name);</span><br><span class="line">        <span class="keyword">return</span> user;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这时候在浏览器访问 <code>http://localhost:8080/sayHello?name=zhangsan</code>，可以看到系统无日志，同时会返回</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;<span class="attr">"name"</span>: <span class="string">"zhangsan"</span>&#125;</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>在新建一个agent项目，实现记录所有调用DemoService#sayHello方法的参数和返回值</li>
+</ol>
+<p>这次我们借助bytebuddy的支持来实现我们的功能</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 引入 byte-buddy依赖 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>net.bytebuddy<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>byte-buddy<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.12.12<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 先创建一个记录日志的Advice</span></span><br><span class="line"><span class="keyword">import</span> net.bytebuddy.asm.Advice;</span><br><span class="line"><span class="keyword">import</span> net.bytebuddy.implementation.bytecode.assign.Assigner;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.lang.reflect.Method;</span><br><span class="line"><span class="keyword">import</span> java.lang.reflect.Parameter;</span><br><span class="line"><span class="keyword">import</span> java.util.HashMap;</span><br><span class="line"><span class="keyword">import</span> java.util.Map;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">LoggingAdvice</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 方法进行时获取对应的参数信息</span></span><br><span class="line">    <span class="meta">@Advice</span>.OnMethodEnter(suppress = Exception.class)</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">before</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">            @Advice.AllArguments Object[] allArguments,</span></span></span><br><span class="line"><span class="function"><span class="params">            @Advice.Origin Method method)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (allArguments == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Map&lt;String, Object&gt; map = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> Parameter[] parameters = method.getParameters();</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; parameters.length; i++) &#123;</span><br><span class="line">            map.put(parameters[i].getName(), allArguments[i]);</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> map.toString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 方法退出时获取结果信息，并打印最终结果</span></span><br><span class="line">    <span class="meta">@Advice</span>.OnMethodExit</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">after</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">            @Advice.Enter String params,</span></span></span><br><span class="line"><span class="function"><span class="params">            @Advice.Origin Method method,</span></span></span><br><span class="line"><span class="function"><span class="params">            @Advice.Return(typing = Assigner.Typing.DYNAMIC)</span> Object returnValue) </span>&#123;</span><br><span class="line">        <span class="comment">// 打印结果日志</span></span><br><span class="line">        System.out.println(<span class="string">"method:"</span> + method.getName() + <span class="string">",param:"</span> + params + <span class="string">",result:"</span> + returnValue);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>实现Agent类对应的agentmain方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Agent.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">agentmain</span><span class="params">(String agentArgs, Instrumentation inst)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">new</span> AgentBuilder.Default().disableClassFormatChanges()</span><br><span class="line">            .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)</span><br><span class="line">            <span class="comment">// 匹配以 com.zavier.bootdemo.web 开头的类</span></span><br><span class="line">            .type(ElementMatchers.nameStartsWith(<span class="string">"com.zavier.bootdemo.web"</span>))</span><br><span class="line">            .transform(<span class="keyword">new</span> AgentBuilder.Transformer() &#123;</span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="keyword">public</span> DynamicType.Builder&lt;?&gt; transform(DynamicType.Builder&lt;?&gt; builder, TypeDescription typeDescription, ClassLoader classLoader, JavaModule <span class="keyword">module</span>) &#123;</span><br><span class="line">                    <span class="comment">// 将方法名称是 sayHello 交给 LoggingAdvice 处理</span></span><br><span class="line">                    <span class="keyword">return</span> builder.visit(Advice.to(LoggingAdvice.class).on(</span><br><span class="line">                            namedOneOf(<span class="string">"sayHello"</span>)));</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">            &#125;).installOn(inst);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>补充好配置文件后，整体进行打成一个jar包</p>
+<ol start="3">
+<li>动态挂载，实现打印日志功能</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span> 首先查找对当前spring boot项目对应的进程ID，可以看到对应的ID是 63932</span><br><span class="line">➜ jps -l                    </span><br><span class="line">66387 sun.tools.jps.Jps</span><br><span class="line">63932 com.zavier.bootdemo.BootDemoApplication</span><br></pre></td></tr></table></figure>
+<p>实现attach的java代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    VirtualMachine jvm = VirtualMachine.attach(<span class="string">"63932"</span>); <span class="comment">// springboot项目进程ID</span></span><br><span class="line">    jvm.loadAgent(<span class="string">"/path/agent-study-1.0-SNAPSHOT-full.jar"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这时候再通过浏览器访问<code>http://localhost:8080/sayHello?name=zhangsan</code>就可以在springboot项目中看到如下输出</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">method:sayHello,param:&#123;arg0=zhangsan&#125;,result:User(name=zhangsan)</span><br></pre></td></tr></table></figure>
+<p>这样我们就实现了在不修改代码的情况下添加日志的功能，当然这只是一个小的例子，实际使用的时候要考虑很多场景，如类的隔离、修改类的卸载回退等等</p>
+<p>以上就是这次的全部内容，很多地方没有使用精确的定义，基本是作者个人的理解表述，如有错误欢迎指正</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        
+          
+        
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/agent/" rel="tag"># agent</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/04/12/guava-retry/" rel="next" title="Java异常重试-GuavaRetrying">
+                <i class="fa fa-chevron-left"></i> Java异常重试-GuavaRetrying
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2023/06/10/word-template/" rel="prev" title="让GPT开发Word模版功能">
+                让GPT开发Word模版功能 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/weixin.jpg" alt="郑伟">
+            
+              <p class="site-author-name" itemprop="name">郑伟</p>
+              <div class="site-description motion-element" itemprop="description">学习笔记</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">60</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">39</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/zavier" title="GitHub &rarr; https://github.com/zavier" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:765324639@gmail.com" title="E-Mail &rarr; mailto:765324639@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#字节码"><span class="nav-number">1.</span> <span class="nav-text">字节码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JavaAgent"><span class="nav-number">2.</span> <span class="nav-text">JavaAgent</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#方法声明"><span class="nav-number">2.1.</span> <span class="nav-text">方法声明</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#方法实现"><span class="nav-number">2.2.</span> <span class="nav-text">方法实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#打包配置"><span class="nav-number">2.3.</span> <span class="nav-text">打包配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#实现例子"><span class="nav-number">2.4.</span> <span class="nav-text">实现例子</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">  <a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">黑ICP备19000073号-1 </a>&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">郑伟</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

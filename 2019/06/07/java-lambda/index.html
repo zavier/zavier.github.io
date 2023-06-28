@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: true,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="什么是 Lambda表达式？对于 Java 中的 lambda 表达式，我们可以把它简单的理解为一个函数。 比如，我们需要这样一个函数，它需要把两个数字相加，将结果返回 则可以这样定义 1int add(int a, int b); 但是我们知道，Java中函数是没有办法单独定义存在的，所以我们需要一个接口才能声明这个函数功能 123interface Function &amp;#123;    int">
+<meta name="keywords" content="java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈Java Lambda表达式及其使用">
+<meta property="og:url" content="https://zhengw-tech.com/2019/06/07/java-lambda/index.html">
+<meta property="og:site_name" content="个人网页">
+<meta property="og:description" content="什么是 Lambda表达式？对于 Java 中的 lambda 表达式，我们可以把它简单的理解为一个函数。 比如，我们需要这样一个函数，它需要把两个数字相加，将结果返回 则可以这样定义 1int add(int a, int b); 但是我们知道，Java中函数是没有办法单独定义存在的，所以我们需要一个接口才能声明这个函数功能 123interface Function &amp;#123;    int">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2021-04-17T14:50:06.968Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="浅谈Java Lambda表达式及其使用">
+<meta name="twitter:description" content="什么是 Lambda表达式？对于 Java 中的 lambda 表达式，我们可以把它简单的理解为一个函数。 比如，我们需要这样一个函数，它需要把两个数字相加，将结果返回 则可以这样定义 1int add(int a, int b); 但是我们知道，Java中函数是没有办法单独定义存在的，所以我们需要一个接口才能声明这个函数功能 123interface Function &amp;#123;    int">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://zhengw-tech.com/2019/06/07/java-lambda/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>浅谈Java Lambda表达式及其使用 | 个人网页</title>
+  
+
+
+
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-163916658-1"></script>
+  <script>
+    var host = window.location.hostname;
+    if (host !== "localhost" || !true) {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-163916658-1');
+    }
+  </script>
+
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d7e9ac20bfcbf1d8dff4cffb8eaa5caf";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">个人网页</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签<span class="badge">42</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档<span class="badge">60</span></a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+  
+  
+
+  
+
+  <a href="https://github.com/zavier" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewbox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a>
+
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://zhengw-tech.com/2019/06/07/java-lambda/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="郑伟">
+      <meta itemprop="description" content="学习笔记">
+      <meta itemprop="image" content="/images/weixin.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="个人网页">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">浅谈Java Lambda表达式及其使用
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-06-07 13:50:06" itemprop="dateCreated datePublished" datetime="2019-06-07T13:50:06+08:00">2019-06-07</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2021-04-17 22:50:06" itemprop="dateModified" datetime="2021-04-17T22:50:06+08:00">2021-04-17</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             阅读次数： 
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="什么是-Lambda表达式？"><a href="#什么是-Lambda表达式？" class="headerlink" title="什么是 Lambda表达式？"></a>什么是 Lambda表达式？</h2><p>对于 Java 中的 lambda 表达式，我们可以把它简单的理解为一个函数。</p>
+<p>比如，我们需要这样一个函数，它需要把两个数字相加，将结果返回 则可以这样定义</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>但是我们知道，Java中函数是没有办法单独定义存在的，所以我们需要一个接口才能声明这个函数功能</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">Function</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当我们需要实现这个方法的时候，一种方法就是定义一个新的类来实现这个接口</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Calc</span> <span class="keyword">implements</span> <span class="title">Function</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> a + b;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<a id="more"></a>
+<p>除此之外，还有一种方法就是使用匿名类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Function addFunc = <span class="keyword">new</span> Function() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> a + b;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>而在 Java8 中，我们又有了一种更简单的写法，这也就是lambda表达式</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Function addFunc1 = (a, b) -&gt; a + b;</span><br></pre></td></tr></table></figure>
+<p>当然，既然是为了表达一个函数所创建的接口，所以定义的接口中就必须只能有一个方法。对于这类接口，它还有一个特殊的名字: <strong>函数式接口</strong>，我们可以在对应的接口上面添加<code>@FunctionalInterface</code>注解来表明它的身份。</p>
+<h2 id="如何使用"><a href="#如何使用" class="headerlink" title="如何使用?"></a>如何使用?</h2><p>上一节我们可以知道，lambda就是函数式接口的实现，所以要想使用lambda表示式，我们必须先定义一个函数式接口，这样任何需要函数式接口的地方，我们都可以传递lambda表达式进去。我们也可以自己定义方法，接受lambda表达式参数</p>
+<p>JDK中已经定义了很多常用的函数式接口，比如<code>Comparator</code>接口</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@FunctionalInterface</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Comparator</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">compare</span><span class="params">(T o1, T o2)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样我们在排序的时候，接受 Comparator接口的地方就可以传递lambda表达式了，非常方便</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; list = ...;</span><br><span class="line">list.sort((s1, s2) -&gt; s1.compareTo(s2));</span><br></pre></td></tr></table></figure>
+<p>基本常用的函数式接口，JDK已经都帮我们内置好了，不需要自己定义，大致有以下几类</p>
+<h3 id="常用函数式接口"><a href="#常用函数式接口" class="headerlink" title="常用函数式接口"></a>常用函数式接口</h3><h4 id="Predicate"><a href="#Predicate" class="headerlink" title="Predicate"></a>Predicate</h4><p>谓词 - 用来对数据进行判断，返回true或false</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@FunctionalInterface</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Predicate</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">test</span><span class="params">(T t)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="Function"><a href="#Function" class="headerlink" title="Function"></a>Function</h4><p>用于转换数据，将前一个参数的类型转为后面的类型</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@FunctionalInterface</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Function</span>&lt;<span class="title">T</span>, <span class="title">R</span>&gt; </span>&#123;</span><br><span class="line">    <span class="function">R <span class="title">apply</span><span class="params">(T t)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="Supplier"><a href="#Supplier" class="headerlink" title="Supplier"></a>Supplier</h4><p>生产者，用来生产数据，无参数，返回一个对象</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@FunctionalInterface</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Supplier</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="function">T <span class="title">get</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="Consumer"><a href="#Consumer" class="headerlink" title="Consumer"></a>Consumer</h4><p>消费者，就是用来消费数据，接受一个数据，无返回值</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@FunctionalInterface</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Consumer</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">accept</span><span class="params">(T t)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Lambda表达式复合使用"><a href="#Lambda表达式复合使用" class="headerlink" title="Lambda表达式复合使用"></a>Lambda表达式复合使用</h2><p>函数式接口的功能都比较单一，有时候无法满足我们的需求，这时候就需要将多个lambda表达式组合到一起使用来完成功能</p>
+<h3 id="比较器复合"><a href="#比较器复合" class="headerlink" title="比较器复合"></a>比较器复合</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 对于用户类，有两个比较器</span></span><br><span class="line">Comparator&lt;User&gt; ageComparator = (u1, u2) -&gt; u1.getAge().compareTo(u2.getAge());</span><br><span class="line">Comparator&lt;User&gt; nameComparator = (u1, u2) -&gt; u1.getAge().compareTo(u2.getAge());</span><br><span class="line"></span><br><span class="line"><span class="comment">// 如果我们需要按照年龄倒序排序</span></span><br><span class="line">Comparator&lt;User&gt; comparator = ageComparator.reversed();</span><br><span class="line"><span class="comment">// 年龄相等时，我们需要再根据姓名进行比较</span></span><br><span class="line">comparator = ageComparator.thenComparing(nameComparator);</span><br></pre></td></tr></table></figure>
+<p>上面只是为了方便理解，实际比较时，可以使用 <code>Comparator.comparing()</code>方法</p>
+<p>如按照年龄排序: <code>Comparator&lt;User&gt; newAgeComparator = Comparator.comparing(User::getAge);</code></p>
+<h3 id="谓词复合"><a href="#谓词复合" class="headerlink" title="谓词复合"></a>谓词复合</h3><p>谓词接口有三个方法，<code>negate</code>, <code>and</code> ,<code>or</code>来分别表示 非、与、或</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取年龄大于18岁的用户</span></span><br><span class="line">Predicate&lt;User&gt; userPred1 = u -&gt; u.getAge() &gt; <span class="number">18</span>;</span><br><span class="line"><span class="comment">// 获取体重大于80的人</span></span><br><span class="line">Predicate&lt;User&gt; userPred2 = u -&gt; u.getWeight() &gt; <span class="number">80</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 同时获取年龄大于18 且 体重大于80的人</span></span><br><span class="line">Predicate&lt;User&gt; newPred = userPred1.and(userPred2);</span><br><span class="line"><span class="comment">// 获取年龄大于18 或者 体重大于80的人</span></span><br><span class="line">Predicate&lt;User&gt; newPred2 = userPred1.or(userPred2);</span><br></pre></td></tr></table></figure>
+<p><strong>注意：如果<code>and</code>和<code>or</code>在一起使用，则会按照书写顺序来定优先级</strong></p>
+<h3 id="函数复合"><a href="#函数复合" class="headerlink" title="函数复合"></a>函数复合</h3><p><code>Function</code>接口提供了两个方法<code>andThen</code>和<code>compose</code>用来组合函数</p>
+<p>andThen用在执行完当然函数，将结果用户参数中的下一个函数</p>
+<p>而 compose顺序则相反，是执行完参数中的函数，将结果用于当前调用函数</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Function&lt;Integer, Integer&gt; f = x -&gt; x + <span class="number">1</span>;</span><br><span class="line">Function&lt;Integer, Integer&gt; g = x -&gt; x * <span class="number">2</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 先执行 f 再执行 g</span></span><br><span class="line">Function&lt;Integer, Integer&gt; h = f.andThen(g);</span><br><span class="line"><span class="comment">// == (10 + 1) * 2 = 22</span></span><br><span class="line">System.out.println(h.apply(<span class="number">10</span>));</span><br><span class="line"></span><br><span class="line"><span class="comment">// 先执行 g 再执行 f</span></span><br><span class="line">Function&lt;Integer, Integer&gt; compose = f.compose(g);</span><br><span class="line"><span class="comment">// == (10 * 2) + 1 = 21</span></span><br><span class="line">System.out.println(compose.apply(<span class="number">10</span>));</span><br></pre></td></tr></table></figure>
+<h2 id="附：Java8其他"><a href="#附：Java8其他" class="headerlink" title="附：Java8其他"></a>附：Java8其他</h2><h3 id="流的扁平化-flatMap"><a href="#流的扁平化-flatMap" class="headerlink" title="流的扁平化-flatMap"></a>流的扁平化-flatMap</h3><p>flatMap方法让你把一个流中的每个值都换成另一个流，然后把所有的流连接起来成为一个流<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取所有的各不相同的字符</span></span><br><span class="line">List&lt;String&gt; words = Arrays.asList(<span class="string">"hello"</span>, <span class="string">"world"</span>);</span><br><span class="line">List&lt;String&gt; result = words.stream()</span><br><span class="line">        <span class="comment">// 转换为字符串数组流</span></span><br><span class="line">        .map(word -&gt; word.split(<span class="string">""</span>))</span><br><span class="line">        <span class="comment">// Arrays.stream会将数组转换成一个流，之后将其合并为一个流</span></span><br><span class="line">        .flatMap(Arrays::stream)</span><br><span class="line">        .distinct()</span><br><span class="line">        .collect(Collectors.toList());</span><br><span class="line">System.out.println(result);</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 生成所有数对，如：[(1,3), (1,3), (1,4), (2,3), (2,4), (3,3), (3,4)]</span></span><br><span class="line">List&lt;Integer&gt; num1 = Arrays.asList(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>);</span><br><span class="line">List&lt;Integer&gt; num2 = Arrays.asList(<span class="number">3</span>, <span class="number">4</span>);</span><br><span class="line"></span><br><span class="line">List&lt;<span class="keyword">int</span>[]&gt; collect = num1.stream()</span><br><span class="line">        <span class="comment">// 将每个num1中的数值转换为对应的流，并合成一个</span></span><br><span class="line">        .flatMap(n1 -&gt; num2.stream().map(n2 -&gt; <span class="keyword">new</span> <span class="keyword">int</span>[]&#123;n1, n2&#125;))</span><br><span class="line">        .collect(Collectors.toList());</span><br><span class="line">collect.stream()</span><br><span class="line">        .map(Arrays::toString)</span><br><span class="line">        .forEach(System.out::println);</span><br></pre></td></tr></table></figure>
+<h3 id="查找和匹配"><a href="#查找和匹配" class="headerlink" title="查找和匹配"></a>查找和匹配</h3><h4 id="至少一个匹配"><a href="#至少一个匹配" class="headerlink" title="至少一个匹配"></a>至少一个匹配</h4><p><code>boolean b = words.stream().anyMatch(&quot;hello&quot;::equals);</code></p>
+<h4 id="匹配全部元素"><a href="#匹配全部元素" class="headerlink" title="匹配全部元素"></a>匹配全部元素</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">boolean b1 = words.stream().allMatch(&quot;hello&quot;::equals);</span><br><span class="line">boolean b2 = words.stream().noneMatch(&quot;hello&quot;::equals);</span><br></pre></td></tr></table></figure>
+<h4 id="查找元素"><a href="#查找元素" class="headerlink" title="查找元素"></a>查找元素</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Optional&lt;String&gt; h1 = words.stream().filter(&quot;hello&quot;::equals).findAny();</span><br><span class="line">Optional&lt;String&gt; h2 = words.stream().filter(&quot;hello&quot;::equals).findFirst();</span><br></pre></td></tr></table></figure>
+<h3 id="收集器接口"><a href="#收集器接口" class="headerlink" title="收集器接口"></a>收集器接口</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> &lt;T&gt; 要收集的项目的范型</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> &lt;A&gt; 累加器的类型，累加器在收集过程中累积部分结果的对象</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> &lt;R&gt; 收集操作得到的对象的类型</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">Collector</span>&lt;<span class="title">T</span>, <span class="title">A</span>, <span class="title">R</span>&gt; </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 建立新的结果容器</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">Supplier&lt;A&gt; <span class="title">supplier</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 将元素添加到结果容器</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">BiConsumer&lt;A, T&gt; <span class="title">accumulator</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 对结果容器应用最终转换</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">Function&lt;A, R&gt; <span class="title">finisher</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 合并两个结果容器（并行处理使用）</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">BinaryOperator&lt;A&gt; <span class="title">combiner</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 定义收集器的行为（是否可以并行归约等）</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">Set&lt;Characteristics&gt; <span class="title">characteristics</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>具体例子可参考 <code>Collectors.toList</code>实现</p>
+</blockquote>
+<p>参考资料：《Java8 实战》</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        
+          
+        
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/06/02/redis-rehash/" rel="next" title="Redis Rehash源码分析">
+                <i class="fa fa-chevron-left"></i> Redis Rehash源码分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/06/08/redis-resp/" rel="prev" title="Redis服务端-客户端通信协议">
+                Redis服务端-客户端通信协议 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/weixin.jpg" alt="郑伟">
+            
+              <p class="site-author-name" itemprop="name">郑伟</p>
+              <div class="site-description motion-element" itemprop="description">学习笔记</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">60</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">39</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/zavier" title="GitHub &rarr; https://github.com/zavier" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:765324639@gmail.com" title="E-Mail &rarr; mailto:765324639@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#什么是-Lambda表达式？"><span class="nav-number">1.</span> <span class="nav-text">什么是 Lambda表达式？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何使用"><span class="nav-number">2.</span> <span class="nav-text">如何使用?</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#常用函数式接口"><span class="nav-number">2.1.</span> <span class="nav-text">常用函数式接口</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Predicate"><span class="nav-number">2.1.1.</span> <span class="nav-text">Predicate</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Function"><span class="nav-number">2.1.2.</span> <span class="nav-text">Function</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Supplier"><span class="nav-number">2.1.3.</span> <span class="nav-text">Supplier</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Consumer"><span class="nav-number">2.1.4.</span> <span class="nav-text">Consumer</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Lambda表达式复合使用"><span class="nav-number">3.</span> <span class="nav-text">Lambda表达式复合使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#比较器复合"><span class="nav-number">3.1.</span> <span class="nav-text">比较器复合</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#谓词复合"><span class="nav-number">3.2.</span> <span class="nav-text">谓词复合</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#函数复合"><span class="nav-number">3.3.</span> <span class="nav-text">函数复合</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#附：Java8其他"><span class="nav-number">4.</span> <span class="nav-text">附：Java8其他</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#流的扁平化-flatMap"><span class="nav-number">4.1.</span> <span class="nav-text">流的扁平化-flatMap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查找和匹配"><span class="nav-number">4.2.</span> <span class="nav-text">查找和匹配</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#至少一个匹配"><span class="nav-number">4.2.1.</span> <span class="nav-text">至少一个匹配</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#匹配全部元素"><span class="nav-number">4.2.2.</span> <span class="nav-text">匹配全部元素</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#查找元素"><span class="nav-number">4.2.3.</span> <span class="nav-text">查找元素</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#收集器接口"><span class="nav-number">4.3.</span> <span class="nav-text">收集器接口</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">  <a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">黑ICP备19000073号-1 </a>&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">郑伟</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

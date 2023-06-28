@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: true,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="Thrift的关键其实就是在定义好结构后，通过某种序列化方式进行网络传输交互，一般定义结构可以使用IDL的方式来描述各个字段属性等信息，这种方式可以支持跨语言的使用。对于纯Java的应用，也可以通过在类中添加注解的方式来实现，即把IDL中需要定义的信息，通过注解和注解中的信息来进行描述，同样可以达到定义结构的目的 定义好结构之后，就可以通过对应的TProtocol将数据结构进行发送和接收的序列化和">
+<meta name="keywords" content="java,thrift">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Thrift(三)-协议使用">
+<meta property="og:url" content="https://zhengw-tech.com/2021/12/19/thrift-v3/index.html">
+<meta property="og:site_name" content="个人网页">
+<meta property="og:description" content="Thrift的关键其实就是在定义好结构后，通过某种序列化方式进行网络传输交互，一般定义结构可以使用IDL的方式来描述各个字段属性等信息，这种方式可以支持跨语言的使用。对于纯Java的应用，也可以通过在类中添加注解的方式来实现，即把IDL中需要定义的信息，通过注解和注解中的信息来进行描述，同样可以达到定义结构的目的 定义好结构之后，就可以通过对应的TProtocol将数据结构进行发送和接收的序列化和">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://zhengw-tech.com/images/thrift_struct.jpg">
+<meta property="og:updated_time" content="2023-06-04T14:02:32.460Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Thrift(三)-协议使用">
+<meta name="twitter:description" content="Thrift的关键其实就是在定义好结构后，通过某种序列化方式进行网络传输交互，一般定义结构可以使用IDL的方式来描述各个字段属性等信息，这种方式可以支持跨语言的使用。对于纯Java的应用，也可以通过在类中添加注解的方式来实现，即把IDL中需要定义的信息，通过注解和注解中的信息来进行描述，同样可以达到定义结构的目的 定义好结构之后，就可以通过对应的TProtocol将数据结构进行发送和接收的序列化和">
+<meta name="twitter:image" content="https://zhengw-tech.com/images/thrift_struct.jpg">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://zhengw-tech.com/2021/12/19/thrift-v3/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Thrift(三)-协议使用 | 个人网页</title>
+  
+
+
+
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-163916658-1"></script>
+  <script>
+    var host = window.location.hostname;
+    if (host !== "localhost" || !true) {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-163916658-1');
+    }
+  </script>
+
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d7e9ac20bfcbf1d8dff4cffb8eaa5caf";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">个人网页</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签<span class="badge">42</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档<span class="badge">60</span></a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+  
+  
+
+  
+
+  <a href="https://github.com/zavier" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewbox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a>
+
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://zhengw-tech.com/2021/12/19/thrift-v3/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="郑伟">
+      <meta itemprop="description" content="学习笔记">
+      <meta itemprop="image" content="/images/weixin.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="个人网页">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Thrift(三)-协议使用
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2021-12-19 23:04:14" itemprop="dateCreated datePublished" datetime="2021-12-19T23:04:14+08:00">2021-12-19</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2023-06-04 22:02:32" itemprop="dateModified" datetime="2023-06-04T22:02:32+08:00">2023-06-04</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             阅读次数： 
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Thrift的关键其实就是在定义好结构后，通过某种序列化方式进行网络传输交互，一般定义结构可以使用IDL的方式来描述各个字段属性等信息，这种方式可以支持跨语言的使用。对于纯Java的应用，也可以通过在类中添加注解的方式来实现，即把IDL中需要定义的信息，通过注解和注解中的信息来进行描述，同样可以达到定义结构的目的</p>
+<p>定义好结构之后，就可以通过对应的TProtocol将数据结构进行发送和接收的序列化和反序列化即可，这次我们主要看下TProtocol中的一个实现–TBinaryProtocol</p>
+<a id="more"></a>
+<p><img src="/images/thrift_struct.jpg" style="zoom:60%"></p>
+<p>之前我们也看过thrift支持的一些结构类型，如struct、string、map、list等，具体可以看下对应枚举</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">TType</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> STOP   = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> VOID   = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> BOOL   = <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> BYTE   = <span class="number">3</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> DOUBLE = <span class="number">4</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> I16    = <span class="number">6</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> I32    = <span class="number">8</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> I64    = <span class="number">10</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> STRING = <span class="number">11</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> STRUCT = <span class="number">12</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> MAP    = <span class="number">13</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> SET    = <span class="number">14</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> LIST   = <span class="number">15</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> ENUM   = <span class="number">16</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>每次发送消息，都有一个消息类型的标识</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">TMessageType</span> </span>&#123;</span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> CALL  = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> REPLY = <span class="number">2</span>;</span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> EXCEPTION = <span class="number">3</span>;</span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">byte</span> ONEWAY = <span class="number">4</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而TProtocol提供了对应这些结构的读写接口，我们可以大致看一下写接口，读接口也类似</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 发送消息开始</span></span><br><span class="line">writeMessageBegin(name, type, seq);</span><br><span class="line">writeMessageEnd();</span><br><span class="line"><span class="comment">// 开始写入结构体</span></span><br><span class="line">writeStructBegin(name);</span><br><span class="line">writeStructEnd();</span><br><span class="line"><span class="comment">// 开始写入Field，其他的string、i32等的写入都是在Field的写入范围中进行操作</span></span><br><span class="line">writeFieldBegin(name, type, id);</span><br><span class="line">writeFieldEnd();</span><br><span class="line">writeFieldStop();</span><br><span class="line">writeMapBegin(ktype, vtype, size);</span><br><span class="line">writeMapEnd();</span><br><span class="line">writeListBegin(etype, size);</span><br><span class="line">writeListEnd();</span><br><span class="line">writeSetBegin(etype, size);</span><br><span class="line">writeSetEnd();</span><br><span class="line">writeBool(bool);</span><br><span class="line">writeByte(<span class="keyword">byte</span>);</span><br><span class="line">writeI16(i16);</span><br><span class="line">writeI32(i32);</span><br><span class="line">writeI64(i64);</span><br><span class="line">writeDouble(<span class="keyword">double</span>);</span><br><span class="line">writeString(string);</span><br></pre></td></tr></table></figure>
+<p>通过阅读生成的代码，我们就可以看到具体的使用了，基本流程大致如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1 开始发送消息，写好消息类型及序号</span></span><br><span class="line"><span class="comment">// 类型为请求或响应时name为方法名称，响应与对应的请求序号要相同</span></span><br><span class="line">writeMessageBegin(name, type, seq);</span><br><span class="line"><span class="comment">// 1.1 开始写入结构体</span></span><br><span class="line">writeStructBegin(name);</span><br><span class="line"><span class="comment">// 1.1.2 开始写入结构体中的字段（名称、类型、id）, field中的类型也可以是struct</span></span><br><span class="line">writeFieldBegin(name, type, id);</span><br><span class="line"><span class="comment">// 写入字段值</span></span><br><span class="line">writeString(string);</span><br><span class="line"><span class="comment">// 写入结束一个字段</span></span><br><span class="line">writeFieldEnd();</span><br><span class="line"><span class="comment">// 1.1.3 开始写入结构体中的另一个字段</span></span><br><span class="line">writeFieldBegin(name, type, id);</span><br><span class="line"><span class="comment">// 写入字段值</span></span><br><span class="line">writeString(string);</span><br><span class="line"><span class="comment">// 写入结束一个字段</span></span><br><span class="line">writeFieldEnd();</span><br><span class="line"><span class="comment">// 1.1.4 结构体中的字段写入完成</span></span><br><span class="line">writeFieldStop();</span><br><span class="line"><span class="comment">// 写入结束标识</span></span><br><span class="line">writeStructEnd();</span><br><span class="line">writeMessageEnd();</span><br></pre></td></tr></table></figure>
+<p>根据这些接口，掌握了写入流程后，我们可以不使用生成的代码来完成消息的接收和发送，下面我们只使用TBinaryProtocol来实现一个最简单的server服务（对应的接口参考第一篇文章），</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">// userService.thrift</span><br><span class="line">struct User &#123;</span><br><span class="line">    1:string name;</span><br><span class="line">    2:i32 age;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">struct UserSearchResult &#123;</span><br><span class="line">    1:list&lt;User&gt; users;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">service UserService &#123;</span><br><span class="line">    UserSearchResult searchUsers(1:string name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>实现代码如下（只是为了展示功能）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// TProtocol需要以来 TTransport,这里进行构造</span></span><br><span class="line">TServerTransport serverTransport = <span class="keyword">new</span> TServerSocket(<span class="number">12345</span>);</span><br><span class="line">serverTransport.listen();</span><br><span class="line"><span class="keyword">final</span> TTransport transport = serverTransport.accept();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 初始化 TProtocol</span></span><br><span class="line">TProtocol protocol = <span class="keyword">new</span> TBinaryProtocol(transport);</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">    String name = <span class="string">""</span>;</span><br><span class="line">    <span class="comment">// 开始读取 Message，类型为系统调用</span></span><br><span class="line">    <span class="keyword">final</span> TMessage tMessage = protocol.readMessageBegin();</span><br><span class="line">    <span class="keyword">if</span> (tMessage.type == TMessageType.CALL) &#123;</span><br><span class="line">        <span class="comment">// 开始读取结构体</span></span><br><span class="line">        protocol.readStructBegin();</span><br><span class="line">        <span class="comment">// 读取结构体中的属性</span></span><br><span class="line">        <span class="keyword">final</span> TField tField = protocol.readFieldBegin();</span><br><span class="line">        <span class="comment">// 如果属性的id是1，对应的name属性（属性基本都是根据id来定位）</span></span><br><span class="line">        <span class="keyword">if</span> (tField.id == <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="comment">// 读取name的属性值</span></span><br><span class="line">            name = protocol.readString();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 因为对应方法只有一个属性，所以到这里可以认为读取完成了</span></span><br><span class="line">        protocol.readFieldEnd();</span><br><span class="line">        protocol.readStructEnd();</span><br><span class="line">    &#125;</span><br><span class="line">    protocol.readMessageEnd();</span><br><span class="line"></span><br><span class="line">    System.out.println(<span class="string">"Read param name:"</span> + name);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// <span class="doctag">TODO:</span> 这里就是获取完参数值后，进行业务计算，获取结果</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 开始写入结果，类型为reply, 使用请求的序号</span></span><br><span class="line">    <span class="keyword">final</span> TMessage respMessage = <span class="keyword">new</span> TMessage(<span class="string">"searchUsers"</span>, TMessageType.REPLY, tMessage.seqid);</span><br><span class="line">    protocol.writeMessageBegin(respMessage);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// thrift的响应，需要最外层包装一个id=0的struct，其中的Field对应结果的struct</span></span><br><span class="line">    protocol.writeStructBegin(<span class="keyword">new</span> TStruct(<span class="string">"success"</span>));</span><br><span class="line">    <span class="comment">// 开始写入结果的field</span></span><br><span class="line">    protocol.writeFieldBegin(<span class="keyword">new</span> TField(<span class="string">"success"</span>, TType.STRUCT, (<span class="keyword">short</span>) <span class="number">0</span>));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 开始写入结果struct</span></span><br><span class="line">    protocol.writeStructBegin(<span class="keyword">new</span> TStruct(<span class="string">"searchResult"</span>));</span><br><span class="line">    <span class="comment">// 写入结果中的field, 类似为list&lt;user&gt;数据</span></span><br><span class="line">    <span class="keyword">final</span> TField tField = <span class="keyword">new</span> TField(<span class="string">"users"</span>, TType.LIST, (<span class="keyword">short</span>) <span class="number">1</span>);</span><br><span class="line">    <span class="comment">// 写入user-field</span></span><br><span class="line">    protocol.writeFieldBegin(tField);</span><br><span class="line">    <span class="comment">// 写入具体值（list，结构类型为struct, 元素数量为2个）</span></span><br><span class="line">    protocol.writeListBegin(<span class="keyword">new</span> TList(TType.STRUCT,  <span class="number">2</span>));</span><br><span class="line">		<span class="comment">// 写入list中的第一个struct</span></span><br><span class="line">    protocol.writeStructBegin(<span class="keyword">new</span> TStruct(<span class="string">"user"</span>));</span><br><span class="line">    protocol.writeFieldBegin(<span class="keyword">new</span> TField(<span class="string">"name"</span>, TType.STRING, (<span class="keyword">short</span>) <span class="number">1</span>));</span><br><span class="line">    protocol.writeString(<span class="string">"zhangsan1"</span>);</span><br><span class="line">    protocol.writeFieldEnd();</span><br><span class="line">    protocol.writeFieldBegin(<span class="keyword">new</span> TField(<span class="string">"age"</span>, TType.I32, (<span class="keyword">short</span>) <span class="number">2</span>));</span><br><span class="line">    protocol.writeI32(<span class="number">18</span>);</span><br><span class="line">    protocol.writeFieldEnd();</span><br><span class="line">    protocol.writeFieldStop();</span><br><span class="line">    protocol.writeStructEnd();</span><br><span class="line">    <span class="comment">// 写入list中的第二个struct</span></span><br><span class="line">    protocol.writeStructBegin(<span class="keyword">new</span> TStruct(<span class="string">"user"</span>));</span><br><span class="line">    protocol.writeFieldBegin(<span class="keyword">new</span> TField(<span class="string">"name"</span>, TType.STRING, (<span class="keyword">short</span>) <span class="number">1</span>));</span><br><span class="line">    protocol.writeString(<span class="string">"lisi1"</span>);</span><br><span class="line">    protocol.writeFieldEnd();</span><br><span class="line">    protocol.writeFieldBegin(<span class="keyword">new</span> TField(<span class="string">"age"</span>, TType.I32, (<span class="keyword">short</span>) <span class="number">2</span>));</span><br><span class="line">    protocol.writeI32(<span class="number">19</span>);</span><br><span class="line">    protocol.writeFieldEnd();</span><br><span class="line">    protocol.writeFieldStop();</span><br><span class="line">    protocol.writeStructEnd();</span><br><span class="line">		<span class="comment">// 结束list写入及其他对应的结束方法</span></span><br><span class="line">    protocol.writeListEnd();</span><br><span class="line">    protocol.writeFieldEnd();</span><br><span class="line">    protocol.writeFieldStop();</span><br><span class="line">    protocol.writeStructEnd();</span><br><span class="line"></span><br><span class="line">    protocol.writeFieldEnd();</span><br><span class="line">    protocol.writeFieldStop();</span><br><span class="line">    protocol.writeStructEnd();</span><br><span class="line">    <span class="comment">// 结束消息写入</span></span><br><span class="line">    protocol.writeMessageEnd();</span><br><span class="line">    <span class="comment">// 刷新发送</span></span><br><span class="line">    protocol.getTransport().flush();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>之后启动服务，在使用之前的Client端方法进行调用</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// client端代码，使用thrift生成的UserService.Client调用</span></span><br><span class="line">TTransport transport = <span class="keyword">new</span> TSocket(<span class="string">"localhost"</span>, <span class="number">12345</span>);</span><br><span class="line">transport.open();</span><br><span class="line"></span><br><span class="line">TProtocol protocol = <span class="keyword">new</span> TBinaryProtocol(transport);</span><br><span class="line">UserService.Client client = <span class="keyword">new</span> UserService.Client(protocol);</span><br><span class="line"></span><br><span class="line">UserSearchResult userRes = client.searchUsers(<span class="string">"zhangsan"</span>);</span><br><span class="line">System.out.println(userRes);</span><br><span class="line"></span><br><span class="line">transport.close();</span><br></pre></td></tr></table></figure>
+<p>执行后可以发现可以实现之前的功能</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// 服务端终端输出</span><br><span class="line">Read param name:zhangsan</span><br><span class="line">// 客户端终端输出</span><br><span class="line">UserSearchResult(users:[User(name:zhangsan1, age:18), User(name:lisi1, age:19)])</span><br></pre></td></tr></table></figure>
+<p>再进行深入的话，我们可以根据 TBinaryProtocol 中的具体发送信息逻辑，直接使用原生的Java Socket进行编程，只不过会更加麻烦一些，原理基本就是如此</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        
+          
+        
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/thrift/" rel="tag"># thrift</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/12/18/thrift-v2/" rel="next" title="Thrift(二)-处理流程分析">
+                <i class="fa fa-chevron-left"></i> Thrift(二)-处理流程分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2022/01/02/pf4j-use/" rel="prev" title="PF4J入门使用">
+                PF4J入门使用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <div class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/weixin.jpg" alt="郑伟">
+            
+              <p class="site-author-name" itemprop="name">郑伟</p>
+              <div class="site-description motion-element" itemprop="description">学习笔记</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">60</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">39</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/zavier" title="GitHub &rarr; https://github.com/zavier" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:765324639@gmail.com" title="E-Mail &rarr; mailto:765324639@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">  <a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">黑ICP备19000073号-1 </a>&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">郑伟</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

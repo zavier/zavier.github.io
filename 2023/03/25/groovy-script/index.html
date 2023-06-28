@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: true,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="Groovy本身是一门完整的编程语言，同时也可以作为脚本集成到我们的应用中，为静态语言提供一些动态的能力，比如将 groovy 的脚本放到一些动态配置中或者数据库中进行管理，实现一些动态的规则计算等，在规则新增或变更的时候可以实时更新而无需开发代码上线，这次主要介绍一下Java中如何使用Groovy脚本 关于在应用中集成Groovy，官方文档已经提供了相关的资料，本次基于此文档进行一下说明 首先需">
+<meta name="keywords" content="java,groovy">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java项目中使用Groovy的几种方式">
+<meta property="og:url" content="https://zhengw-tech.com/2023/03/25/groovy-script/index.html">
+<meta property="og:site_name" content="个人网页">
+<meta property="og:description" content="Groovy本身是一门完整的编程语言，同时也可以作为脚本集成到我们的应用中，为静态语言提供一些动态的能力，比如将 groovy 的脚本放到一些动态配置中或者数据库中进行管理，实现一些动态的规则计算等，在规则新增或变更的时候可以实时更新而无需开发代码上线，这次主要介绍一下Java中如何使用Groovy脚本 关于在应用中集成Groovy，官方文档已经提供了相关的资料，本次基于此文档进行一下说明 首先需">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2023-05-27T13:21:12.913Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java项目中使用Groovy的几种方式">
+<meta name="twitter:description" content="Groovy本身是一门完整的编程语言，同时也可以作为脚本集成到我们的应用中，为静态语言提供一些动态的能力，比如将 groovy 的脚本放到一些动态配置中或者数据库中进行管理，实现一些动态的规则计算等，在规则新增或变更的时候可以实时更新而无需开发代码上线，这次主要介绍一下Java中如何使用Groovy脚本 关于在应用中集成Groovy，官方文档已经提供了相关的资料，本次基于此文档进行一下说明 首先需">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://zhengw-tech.com/2023/03/25/groovy-script/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Java项目中使用Groovy的几种方式 | 个人网页</title>
+  
+
+
+
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-163916658-1"></script>
+  <script>
+    var host = window.location.hostname;
+    if (host !== "localhost" || !true) {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-163916658-1');
+    }
+  </script>
+
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d7e9ac20bfcbf1d8dff4cffb8eaa5caf";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">个人网页</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签<span class="badge">42</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档<span class="badge">60</span></a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+  
+  
+
+  
+
+  <a href="https://github.com/zavier" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewbox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a>
+
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://zhengw-tech.com/2023/03/25/groovy-script/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="郑伟">
+      <meta itemprop="description" content="学习笔记">
+      <meta itemprop="image" content="/images/weixin.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="个人网页">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Java项目中使用Groovy的几种方式
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2023-03-25 17:23:17" itemprop="dateCreated datePublished" datetime="2023-03-25T17:23:17+08:00">2023-03-25</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2023-05-27 21:21:12" itemprop="dateModified" datetime="2023-05-27T21:21:12+08:00">2023-05-27</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             阅读次数： 
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Groovy本身是一门完整的编程语言，同时也可以作为脚本集成到我们的应用中，为静态语言提供一些动态的能力，比如将 groovy 的脚本放到一些动态配置中或者数据库中进行管理，实现一些动态的规则计算等，在规则新增或变更的时候可以实时更新而无需开发代码上线，这次主要介绍一下Java中如何使用Groovy脚本</p>
+<p>关于在应用中集成Groovy，官方文档已经提供了相关的<a href="http://www.groovy-lang.org/integrating.html" target="_blank" rel="noopener">资料</a>，本次基于此文档进行一下说明</p>
+<p>首先需要引入相应的包，这里基于的版本是<code>3.0.16</code></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.codehaus.groovy<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>groovy-all<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.0.16<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<a id="more"></a>
+<h2 id="Eval"><a href="#Eval" class="headerlink" title="Eval"></a>Eval</h2><p>Eval是最简单的一种用法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> groovy.util.Eval;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 1.执行没有参数的表达式，其中可以调用方法</span></span><br><span class="line">Eval.me(<span class="string">"33*3"</span>);  <span class="comment">// 99</span></span><br><span class="line">Eval.me(<span class="string">"'foo'.toUpperCase()"</span>); <span class="comment">// FOO</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. 执行有一个参数的表达式</span></span><br><span class="line"><span class="comment">// x赋值为4，执行表达值（变量名固定为x）</span></span><br><span class="line">Eval.x(<span class="number">4</span>, <span class="string">"2 * x"</span>); <span class="comment">// 8</span></span><br><span class="line"><span class="comment">// k赋值为4，，执行表达值（自定义变量名，并在脚本中使用）</span></span><br><span class="line">Eval.me(<span class="string">"k"</span>, <span class="number">4</span>, <span class="string">"2 * k"</span>); <span class="comment">// 8</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 3. 执行有两个参数的表达式</span></span><br><span class="line"><span class="comment">// x赋值为4， y赋值为6，执行表达值（变量名固定依次为x、y）</span></span><br><span class="line">Eval.xy(<span class="number">4</span>, <span class="number">5</span>, <span class="string">"x * y"</span>); <span class="comment">// 20</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 3. 执行有三个参数的表达式</span></span><br><span class="line"><span class="comment">// x赋值为4， y赋值为6，z赋值为6，执行表达值（变量名固定依次为x、y、z）</span></span><br><span class="line">Eval.xyz(<span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="string">"x * y + z"</span>); <span class="comment">// 26</span></span><br></pre></td></tr></table></figure>
+<p>表达式中可以调用自定义类的方法，如</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@AllArgsConstructor</span></span><br><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Goods</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> String goodsName;</span><br><span class="line">    <span class="keyword">private</span> BigDecimal price;</span><br><span class="line">    <span class="keyword">private</span> Integer num;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> BigDecimal <span class="title">totalPrice</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> price.multiply(<span class="keyword">new</span> BigDecimal(num));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Goods goods = <span class="keyword">new</span> Goods(<span class="string">"goods1"</span>, <span class="keyword">new</span> BigDecimal(<span class="string">"100.54"</span>), <span class="number">5</span>);</span><br><span class="line">Object result = Eval.me(<span class="string">"goods"</span>, goods, <span class="string">"goods.totalPrice()"</span>);</span><br><span class="line"><span class="comment">// result == 502.70</span></span><br></pre></td></tr></table></figure>
+<p>同时，表达式中也支持多行</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Object result = Eval.me(<span class="string">"def i = 5; def j = 6; i + j"</span>);</span><br><span class="line"><span class="comment">// result == 11</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 甚至可以定义函数并执行(定义函数之后，需要手动调用函数才能执行)</span></span><br><span class="line">Object result = Eval.me(<span class="string">"def run1() &#123;def i = 5;def j = 's'; j + i&#125;; run1()"</span>);</span><br><span class="line"><span class="comment">// result == s5</span></span><br></pre></td></tr></table></figure>
+<p>但是使用Eval需要注意，它是不支持缓存的，每次执行都会创建类（会占用永久代/元空间），虽然占用的空间在GC的时候会被回收，不过表达式需要频繁执行的话，还是尽量不要使用</p>
+<h2 id="GroovyShell"><a href="#GroovyShell" class="headerlink" title="GroovyShell"></a>GroovyShell</h2><p>GroovyShell可以认为是Eval的升级版，主要有如下几个方面的改进</p>
+<ol>
+<li>支持多种脚本来源，而不仅仅只能通过字符串传递脚本</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">URI uri = <span class="keyword">new</span> URL(<span class="string">"https://example.test/script.groovy"</span>).toURI();</span><br><span class="line">Object evaluate = groovyShell.evaluate(uri);</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>支持设置和返回更多的参数</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 通过bindng传递参数给Shell</span></span><br><span class="line">Binding sharedData = <span class="keyword">new</span> Binding();</span><br><span class="line">GroovyShell shell = <span class="keyword">new</span> GroovyShell(sharedData);</span><br><span class="line">sharedData.setProperty(<span class="string">"text"</span>, <span class="string">"I am shared data"</span>);</span><br><span class="line">sharedData.setProperty(<span class="string">"num"</span>, <span class="number">10</span>);</span><br><span class="line">Object result = shell.evaluate(<span class="string">"text + ': ' + num"</span>);</span><br><span class="line"><span class="comment">// I am shared data: 10</span></span><br><span class="line"></span><br><span class="line">Binding sharedData = <span class="keyword">new</span> Binding();</span><br><span class="line">GroovyShell shell = <span class="keyword">new</span> GroovyShell(sharedData);</span><br><span class="line"><span class="comment">// 脚本中的变量如果前面有def或者int等声明，则无法通过Binding获取</span></span><br><span class="line">Object result = shell.evaluate(<span class="string">"i = 10; i + 1"</span>);</span><br><span class="line"><span class="comment">// result == 11</span></span><br><span class="line">Object i = sharedData.getProperty(<span class="string">"i"</span>);</span><br><span class="line"><span class="comment">// i == 10</span></span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>可以先解析脚本，延迟执行</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 解析脚本，生成Script</span></span><br><span class="line">GroovyShell shell = <span class="keyword">new</span> GroovyShell();</span><br><span class="line">Script script = shell.parse(<span class="string">"4 * num"</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 给Script绑定变量</span></span><br><span class="line">Binding binding = <span class="keyword">new</span> Binding();</span><br><span class="line">binding.setProperty(<span class="string">"num"</span>, <span class="number">7</span>);</span><br><span class="line">script.setBinding(binding);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 执行脚本</span></span><br><span class="line">Object run = script.run();</span><br><span class="line"><span class="comment">// run == 28</span></span><br></pre></td></tr></table></figure>
+<p>GroovyShell每次执行时也是会创建新的类，解析创建的Script实例是可以进行缓存的，避免每次都加载新的类和创建对应实例，但是因为涉及到外部绑定的变量，所以如果变量有变更，在并发的情况下会有问题，不能在并发情况下使用</p>
+<h2 id="GroovyClassLoader"><a href="#GroovyClassLoader" class="headerlink" title="GroovyClassLoader"></a>GroovyClassLoader</h2><p>之前说过的不管是 Eval 还是 GroovyShell ，它们最终都是使用 GroovyClassLoader进行脚本的解析、创建并加载类来执行的</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">GroovyClassLoader classLoader = <span class="keyword">new</span> GroovyClassLoader();</span><br><span class="line">Class aClass = classLoader.parseClass(<span class="string">"class Foo &#123;String doIt() &#123;return \"ok\"&#125;&#125;"</span>);</span><br><span class="line">Object object = aClass.newInstance();</span><br><span class="line">Method method = object.getClass().getDeclaredMethod(<span class="string">"doIt"</span>);</span><br><span class="line">Object invoke = method.invoke(object);</span><br><span class="line"><span class="comment">// invoke == "ok"</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// 解析类的脚本，也不一定非要使用class来定义，如下定义方式也是可以使用的（默认解析为Script类，会有run方法）</span></span><br><span class="line">GroovyClassLoader classLoader = <span class="keyword">new</span> GroovyClassLoader();</span><br><span class="line">Class aClass = classLoader.parseClass(<span class="string">"def doIt(i) &#123;return \"ok \" + i&#125;"</span>);</span><br><span class="line">Object object = aClass.newInstance();</span><br><span class="line">Method method = object.getClass().getDeclaredMethod(<span class="string">"doIt"</span>, Object.class);</span><br><span class="line">Object invoke = method.invoke(object, <span class="number">6</span>);</span><br><span class="line"><span class="comment">// invoke == "ok 6"</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 对于没有参数的场景，甚至可以这样写（默认解析为Script类，会有run方法）</span></span><br><span class="line">GroovyClassLoader classLoader = <span class="keyword">new</span> GroovyClassLoader();</span><br><span class="line">Class aClass = classLoader.parseClass(<span class="string">"3 + 5"</span>);</span><br><span class="line">Script object = (Script) aClass.newInstance();</span><br><span class="line">Object result = object.run();</span><br><span class="line"><span class="comment">// result == 8</span></span><br></pre></td></tr></table></figure>
+<p>使用这种方式的时候，我们可以缓存创建的实例和对应的方法，之后就可以根据这两个信息进行方法的调用了，同时如果脚本类写的没有问题时，也不会有并发的问题</p>
+<p>以上就是在 Java 项目中使用 Groovy脚本的几种主要方式，大家可以根据具体的使用场景进行选择，尽量缓存创建的实例</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        
+          
+        
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/groovy/" rel="tag"># groovy</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/01/20/gson/" rel="next" title="Gson原理分析-JsonReader">
+                <i class="fa fa-chevron-left"></i> Gson原理分析-JsonReader
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2023/04/12/guava-retry/" rel="prev" title="Java异常重试-GuavaRetrying">
+                Java异常重试-GuavaRetrying <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/weixin.jpg" alt="郑伟">
+            
+              <p class="site-author-name" itemprop="name">郑伟</p>
+              <div class="site-description motion-element" itemprop="description">学习笔记</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">60</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">39</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/zavier" title="GitHub &rarr; https://github.com/zavier" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:765324639@gmail.com" title="E-Mail &rarr; mailto:765324639@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Eval"><span class="nav-number">1.</span> <span class="nav-text">Eval</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GroovyShell"><span class="nav-number">2.</span> <span class="nav-text">GroovyShell</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GroovyClassLoader"><span class="nav-number">3.</span> <span class="nav-text">GroovyClassLoader</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">  <a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">黑ICP备19000073号-1 </a>&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">郑伟</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

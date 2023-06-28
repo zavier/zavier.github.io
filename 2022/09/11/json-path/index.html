@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link rel="stylesheet" href="/lib/fancybox/source/jquery.fancybox.css">
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: true,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="JSON目前是使用的比较多的一种数据格式，前后端的交互就是都是使用JSON格式，后端存储的时候就算使用MySQL，有时候也会存在使用字符串等类型字段存储JSON数据（现在MySQL也支持了JSON类型字段并提供相关的语法） JSONPath比较适合使用在一些结构不确定，或者比较灵活的场景下，从json中获取想要的数据  有一些变更频繁的扩展类的非核心数据，可以直接当做一个json字符串进行存储，在">
+<meta name="keywords" content="java,json,jsonpath">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JSONPath简介">
+<meta property="og:url" content="https://zhengw-tech.com/2022/09/11/json-path/index.html">
+<meta property="og:site_name" content="个人网页">
+<meta property="og:description" content="JSON目前是使用的比较多的一种数据格式，前后端的交互就是都是使用JSON格式，后端存储的时候就算使用MySQL，有时候也会存在使用字符串等类型字段存储JSON数据（现在MySQL也支持了JSON类型字段并提供相关的语法） JSONPath比较适合使用在一些结构不确定，或者比较灵活的场景下，从json中获取想要的数据  有一些变更频繁的扩展类的非核心数据，可以直接当做一个json字符串进行存储，在">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2023-03-28T14:17:04.891Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JSONPath简介">
+<meta name="twitter:description" content="JSON目前是使用的比较多的一种数据格式，前后端的交互就是都是使用JSON格式，后端存储的时候就算使用MySQL，有时候也会存在使用字符串等类型字段存储JSON数据（现在MySQL也支持了JSON类型字段并提供相关的语法） JSONPath比较适合使用在一些结构不确定，或者比较灵活的场景下，从json中获取想要的数据  有一些变更频繁的扩展类的非核心数据，可以直接当做一个json字符串进行存储，在">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://zhengw-tech.com/2022/09/11/json-path/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>JSONPath简介 | 个人网页</title>
+  
+
+
+
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-163916658-1"></script>
+  <script>
+    var host = window.location.hostname;
+    if (host !== "localhost" || !true) {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-163916658-1');
+    }
+  </script>
+
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d7e9ac20bfcbf1d8dff4cffb8eaa5caf";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">个人网页</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签<span class="badge">42</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档<span class="badge">60</span></a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+  
+  
+
+  
+
+  <a href="https://github.com/zavier" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewbox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a>
+
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://zhengw-tech.com/2022/09/11/json-path/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="郑伟">
+      <meta itemprop="description" content="学习笔记">
+      <meta itemprop="image" content="/images/weixin.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="个人网页">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JSONPath简介
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2022-09-11 22:43:19" itemprop="dateCreated datePublished" datetime="2022-09-11T22:43:19+08:00">2022-09-11</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2023-03-28 22:17:04" itemprop="dateModified" datetime="2023-03-28T22:17:04+08:00">2023-03-28</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             阅读次数： 
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>JSON目前是使用的比较多的一种数据格式，前后端的交互就是都是使用JSON格式，后端存储的时候就算使用MySQL，有时候也会存在使用字符串等类型字段存储JSON数据（现在MySQL也支持了JSON类型字段并提供相关的语法）</p>
+<p>JSONPath比较适合使用在一些结构不确定，或者比较灵活的场景下，从json中获取想要的数据</p>
+<ol>
+<li>有一些变更频繁的扩展类的非核心数据，可以直接当做一个json字符串进行存储，在获取的数据可以通过配置的JsonPath来从其中进行取值使用</li>
+<li>在做类似网关等场景下，可以通过配置JsonPath完成数据的转换，当然如果转换逻辑特别复杂时可能还是模版引擎更合适一些</li>
+</ol>
+<a id="more"></a>
+<h2 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h2><p>我们先看下JSONPath的使用，这里使用的是<a href="https://github.com/json-path/JsonPath" target="_blank" rel="noopener">https://github.com/json-path/JsonPath</a>，其README中已经提供了相关的介绍和使用示例，这里再简单介绍下，我们这里直接使用其中的示例数据</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"store"</span>: &#123;</span><br><span class="line">    <span class="attr">"book"</span>: [</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="attr">"category"</span>: <span class="string">"reference"</span>,</span><br><span class="line">        <span class="attr">"author"</span>: <span class="string">"Nigel Rees"</span>,</span><br><span class="line">        <span class="attr">"title"</span>: <span class="string">"Sayings of the Century"</span>,</span><br><span class="line">        <span class="attr">"price"</span>: <span class="number">8.95</span></span><br><span class="line">      &#125;,</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="attr">"category"</span>: <span class="string">"fiction"</span>,</span><br><span class="line">        <span class="attr">"author"</span>: <span class="string">"Evelyn Waugh"</span>,</span><br><span class="line">        <span class="attr">"title"</span>: <span class="string">"Sword of Honour"</span>,</span><br><span class="line">        <span class="attr">"price"</span>: <span class="number">12.99</span></span><br><span class="line">      &#125;,</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="attr">"category"</span>: <span class="string">"fiction"</span>,</span><br><span class="line">        <span class="attr">"author"</span>: <span class="string">"Herman Melville"</span>,</span><br><span class="line">        <span class="attr">"title"</span>: <span class="string">"Moby Dick"</span>,</span><br><span class="line">        <span class="attr">"isbn"</span>: <span class="string">"0-553-21311-3"</span>,</span><br><span class="line">        <span class="attr">"price"</span>: <span class="number">8.99</span></span><br><span class="line">      &#125;,</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="attr">"category"</span>: <span class="string">"fiction"</span>,</span><br><span class="line">        <span class="attr">"author"</span>: <span class="string">"J. R. R. Tolkien"</span>,</span><br><span class="line">        <span class="attr">"title"</span>: <span class="string">"The Lord of the Rings"</span>,</span><br><span class="line">        <span class="attr">"isbn"</span>: <span class="string">"0-395-19395-8"</span>,</span><br><span class="line">        <span class="attr">"price"</span>: <span class="number">22.99</span></span><br><span class="line">      &#125;</span><br><span class="line">    ],</span><br><span class="line">    <span class="attr">"bicycle"</span>: &#123;</span><br><span class="line">      <span class="attr">"color"</span>: <span class="string">"red"</span>,</span><br><span class="line">      <span class="attr">"price"</span>: <span class="number">19.95</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="attr">"expensive"</span>: <span class="number">10</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ol>
+<li><p>JSONPath的表达式都是以 <code>$</code> 开始，表示根节点</p>
+</li>
+<li><p>属性值获取：子节点可以使用 <code>.&lt;name&gt;</code> 来进行表示，如: <code>$.store.bicycle.color</code>  或者 <code>$[&#39;store&#39;][&#39;bicycle&#39;][&#39;color&#39;]</code>可以获取其中的color值</p>
+</li>
+<li><p>获取多个属性值：JSONPath表达式<strong>最后一级</strong>子节点可以同时获取多个值，如 <code>$[&#39;store&#39;][&#39;bicycle&#39;][&#39;color&#39;, &#39;price&#39;]</code></p>
+</li>
+<li>数组数据获取：可以根据索引获取指定位置元素，如： <code>$.store.book[0,1]</code> 或者 <code>$.store.book[:2]</code> 或者 <code>$.store.book[-1]</code></li>
+<li>可以使用通配符<code>*</code>进行匹配，如：<code>$.store.book[*]</code> 或者 <code>$.store.bicycle.*</code></li>
+<li>深度查找可以使用<code>..&lt;name&gt;</code>来对属性进行查找，而不管它的具体位置，如：<code>$..price</code></li>
+<li>属性/数组过滤可以使用<code>[?(&lt;expression&gt;)]</code>，其中的表达式需要能解析为boolean值，如：<code>$.store.bicycle[?(@.color==&#39;red&#39;)]</code> 或者 <code>$.store.book[?(@.price &lt; 10)]</code></li>
+<li>函数使用：可以使用lengh()等函数，如：<code>$.store.book.length()</code> 、<code>$.numbers.sum()</code></li>
+</ol>
+<p>相关API用法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> JsonPath compile = JsonPath.compile(<span class="string">"$.store.book[0].author"</span>);</span><br><span class="line">String json = <span class="string">"..."</span>;</span><br><span class="line"><span class="keyword">final</span> String author = compile.read(json);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 或者如果不重复使用的话，可以直接写成一步</span></span><br><span class="line">List&lt;String&gt; authors = JsonPath.read(json, <span class="string">"$.store.book[*].author"</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 函数使用（需要注意函数能作用的数据类型，如 min(), max(), sum()等只能作用于数值数组）</span></span><br><span class="line">String json = <span class="string">"&#123;\"numbers\":[1,3,4,7,-1]&#125;"</span>;</span><br><span class="line"><span class="keyword">final</span> Object read = JsonPath.read(json, <span class="string">"$.numbers.sum()"</span>); <span class="comment">// 输出：14.0</span></span><br></pre></td></tr></table></figure>
+<p>除此之外，JsonPath还提供了一些额外的配置项，以仓库中的json为例子</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[</span><br><span class="line">   &#123;</span><br><span class="line">      <span class="attr">"name"</span> : <span class="string">"john"</span>,</span><br><span class="line">      <span class="attr">"gender"</span> : <span class="string">"male"</span></span><br><span class="line">   &#125;,</span><br><span class="line">   &#123;</span><br><span class="line">      <span class="attr">"name"</span> : <span class="string">"ben"</span></span><br><span class="line">   &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p><strong>DEFAULT_PATH_LEAF_TO_NULL</strong> </p>
+<p>叶子节点找不到时默认为null： 正常情况下通过Path找不到数据值，JsonPath会抛出异常（使用了通配符如[*]等除外，这种找不到路径是会返回空集合），增加此配置后在叶子结点找不到数据时会返回null 而不是异常（仅限叶子结点，中间节点不存在时仍然会抛出异常）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Configuration configuration =    Configuration.builder().options(Option.DEFAULT_PATH_LEAF_TO_NULL).build();</span><br><span class="line">Object data = JsonPath.using(configuration).parse(json).read(<span class="string">"$[1]['gender']"</span>);</span><br><span class="line"><span class="comment">// data == null</span></span><br></pre></td></tr></table></figure>
+<p><strong>ALWAYS_RETURN_LIST</strong></p>
+<p>不管JsonPath获取的结果是单个值还是集合，都会包装成集合返回</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Configuration configuration = Configuration.builder().options(Option.DEFAULT_PATH_LEAF_TO_NULL, Option.ALWAYS_RETURN_LIST).build();</span><br><span class="line">Object data = JsonPath.using(configuration).parse(json).read(<span class="string">"$[*]['gender']"</span>);</span><br><span class="line"><span class="comment">// data == ["male",null]</span></span><br></pre></td></tr></table></figure>
+<p><strong>SUPPRESS_EXCEPTIONS</strong></p>
+<p>当处理发生异常时，如果配置了 ALWAYS_RETURN_LIST，则返回空集合，否则返回null</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Configuration configuration = Configuration.builder().options(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS).build();</span><br><span class="line">Object data = JsonPath.using(configuration).parse(json).read(<span class="string">"$[0]['abc']['def']"</span>);</span><br><span class="line"><span class="comment">// data = []</span></span><br></pre></td></tr></table></figure>
+<p><strong>REQUIRE_PROPERTIES</strong></p>
+<p>路径中属性不存在时，会抛出异常，因为本身路径不存在就会抛出异常，所以这个配置主要体现在配置通配符的场景下，且如果同时配置了 SUPPRESS_EXCEPTIONS， 则 SUPPRESS_EXCEPTIONS 优先（不会抛出异常）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Configuration configuration = Configuration.builder().options(Option.ALWAYS_RETURN_LIST).build();</span><br><span class="line">Object data = JsonPath.using(configuration).parse(json).read(<span class="string">"$[*]['gender']"</span>);</span><br><span class="line"><span class="comment">// 抛出异常</span></span><br></pre></td></tr></table></figure>
+<p>以上主要是读取的操作，同时它还支持对数据进行修改，调用对应的set方法即可</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String newJson = JsonPath.parse(json).set(<span class="string">"$['store']['book'][0]['author']"</span>, <span class="string">"Paul"</span>).jsonString();</span><br></pre></td></tr></table></figure>
+<h2 id="实现简介"><a href="#实现简介" class="headerlink" title="实现简介"></a>实现简介</h2><p>使用方法基本如下，下面大概说一下它的实现</p>
+<ol>
+<li>先将JSONPath表达式进行编译解析为一系列的token，并按顺序使用链表连接起来</li>
+<li>解析json时，依次调用每个token的解析方法，将自己所在层解析出来后，将解析结果交给之后的token继续进行处理，像剥洋葱一样层层解析</li>
+<li>解析过程中使用配置的json工具类来对数据进行查询操纵</li>
+<li>到最后一个节点后，使用 EvaluationContent对结果进行收集结束</li>
+</ol>
+<p>其中包含的token有如下几类</p>
+<ol>
+<li>RootPathToken，根节点，支持表达式：<code>$</code></li>
+<li>PropertyPathToken，支持表达式: <code>.&lt;name&gt; 或 [&#39;&lt;name1&gt;&#39; (,&#39;&lt;name2&gt;&#39;)]</code></li>
+<li>ArrayIndexToken，支持表达式：<code>[&lt;number&gt; (, &lt;number&gt;)]</code></li>
+<li>ArraySliceToken，支持表达式：<code>[start:end]</code></li>
+<li>WildcardPathToken，支持表达式： <code>* 或者 [*]</code></li>
+<li>PredicatePathToken，支持表达式：<code>[?(&lt;expresion&gt;)]</code></li>
+<li>ScanPathToken，支持表达式：<code>..&lt;name&gt;</code></li>
+<li>FunctionPathToken，用于支持内置的函数</li>
+</ol>
+<p>这样就可以将对应的表达式映射成一系列的token，然后依次解析</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// PathCompiler.java</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">readNextToken</span><span class="params">(PathTokenAppender appender)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">char</span> c = path.currentChar();</span><br><span class="line">    <span class="keyword">switch</span> (c) &#123;</span><br><span class="line">        <span class="keyword">case</span> OPEN_SQUARE_BRACKET:</span><br><span class="line">            <span class="keyword">if</span> (!readBracketPropertyToken(appender) &amp;&amp; !readArrayToken(appender) &amp;&amp; !readWildCardToken(appender)</span><br><span class="line">                &amp;&amp; !readFilterToken(appender) &amp;&amp; !readPlaceholderToken(appender)) &#123;</span><br><span class="line">                fail(<span class="string">"Could not parse token starting at position "</span> + path.position() + <span class="string">". Expected ?, ', 0-9, * "</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        <span class="keyword">case</span> PERIOD:</span><br><span class="line">            <span class="keyword">if</span> (!readDotToken(appender)) &#123;</span><br><span class="line">                fail(<span class="string">"Could not parse token starting at position "</span> + path.position());</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        <span class="keyword">case</span> WILDCARD:</span><br><span class="line">            <span class="keyword">if</span> (!readWildCardToken(appender)) &#123;</span><br><span class="line">                fail(<span class="string">"Could not parse token starting at position "</span> + path.position());</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            <span class="keyword">if</span> (!readPropertyOrFunctionToken(appender)) &#123;</span><br><span class="line">                fail(<span class="string">"Could not parse token starting at position "</span> + path.position());</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们以获取属性使用的PropertyPathToken来看下解析过程</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PropertyPathToken</span> <span class="keyword">extends</span> <span class="title">PathToken</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 这里是解析JSONPath处理的属性名称</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> List&lt;String&gt; properties;</span><br><span class="line">    <span class="comment">// 这里是解析JSONPath处理的属性包含符号，单引号或者双引号</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String stringDelimiter;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">evaluate</span><span class="params">(String currentPath, PathRef parent, Object model, EvaluationContextImpl ctx)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 使用提供的json工具类判断json是否能转换成一个map</span></span><br><span class="line">        <span class="keyword">if</span> (!ctx.jsonProvider().isMap(model)) &#123;</span><br><span class="line">            <span class="comment">// 不能转成map则跳过或者抛出异常</span></span><br><span class="line">            <span class="comment">// 为了看起来简洁一点，这里代码进行了删除，正常json对象解析都是map</span></span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">        <span class="comment">// 一般会进入到这里，解析一个或多个属性</span></span><br><span class="line">        <span class="keyword">if</span> (singlePropertyCase() || multiPropertyMergeCase()) &#123;</span><br><span class="line">            <span class="comment">// 这里调用PathToken中提供的方法</span></span><br><span class="line">            handleObjectProperty(currentPath, model, ctx, properties);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">        <span class="function"><span class="keyword">assert</span> <span class="title">multiPropertyIterationCase</span><span class="params">()</span></span>;</span><br><span class="line">        <span class="keyword">final</span> List&lt;String&gt; currentlyHandledProperty = <span class="keyword">new</span> ArrayList&lt;String&gt;(<span class="number">1</span>);</span><br><span class="line">        currentlyHandledProperty.add(<span class="keyword">null</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">final</span> String property : properties) &#123;</span><br><span class="line">            currentlyHandledProperty.set(<span class="number">0</span>, property);</span><br><span class="line">            handleObjectProperty(currentPath, model, ctx, currentlyHandledProperty);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">PathToken</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">handleObjectProperty</span><span class="params">(String currentPath, Object model, EvaluationContextImpl ctx, List&lt;String&gt; properties)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 单个属性处理</span></span><br><span class="line">        <span class="keyword">if</span>(properties.size() == <span class="number">1</span>) &#123;</span><br><span class="line">            String property = properties.get(<span class="number">0</span>);</span><br><span class="line">            String evalPath = Utils.concat(currentPath, <span class="string">"['"</span>, property, <span class="string">"']"</span>);</span><br><span class="line">            <span class="comment">// 调用提供的json工具获取对应的属性值</span></span><br><span class="line">            Object propertyVal = readObjectProperty(property, model, ctx);</span><br><span class="line">            <span class="comment">// 读取结果为空</span></span><br><span class="line">            <span class="keyword">if</span>(propertyVal == JsonProvider.UNDEFINED)&#123;</span><br><span class="line">                <span class="comment">// 跳过或者抛出异常</span></span><br><span class="line">                <span class="comment">// 这里代码我们先忽略</span></span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            PathRef pathRef = ctx.forUpdate() ? PathRef.create(model, property) : PathRef.NO_OP;</span><br><span class="line">            <span class="comment">// 如果是最后一个节点(叶子节点)，则收集结果结束</span></span><br><span class="line">            <span class="keyword">if</span> (isLeaf()) &#123;</span><br><span class="line">                String idx = <span class="string">"["</span> + String.valueOf(upstreamArrayIndex) + <span class="string">"]"</span>;</span><br><span class="line">                <span class="keyword">if</span>(idx.equals(<span class="string">"[-1]"</span>) || ctx.getRoot().getTail().prev().getPathFragment().equals(idx))&#123;</span><br><span class="line">                    ctx.addResult(evalPath, pathRef, propertyVal);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// 否则使用下一个token处理当前解析到的属性值</span></span><br><span class="line">                next().evaluate(evalPath, pathRef, propertyVal, ctx);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 这里是多个属性的处理逻辑，先忽略，大家有兴趣可以自行看下相关源码</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 使用提供的json工具获取对应的属性值</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> Object <span class="title">readObjectProperty</span><span class="params">(String property, Object model, EvaluationContextImpl ctx)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ctx.jsonProvider().getMapValue(model, property);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上就是全部内容，整体比较简略，大致介绍了下使用和大概实现，希望抛砖引玉吧</p>
+<p>其中如有错误，欢迎指正，感谢～</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        
+          
+        
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/json/" rel="tag"># json</a>
+          
+            <a href="/tags/jsonpath/" rel="tag"># jsonpath</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/06/23/mybatis-config/" rel="next" title="MyBatis使用原理及配置简化实现">
+                <i class="fa fa-chevron-left"></i> MyBatis使用原理及配置简化实现
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2022/09/17/java-bean-diff/" rel="prev" title="Java对象比对实现">
+                Java对象比对实现 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/weixin.jpg" alt="郑伟">
+            
+              <p class="site-author-name" itemprop="name">郑伟</p>
+              <div class="site-description motion-element" itemprop="description">学习笔记</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">60</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">39</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/zavier" title="GitHub &rarr; https://github.com/zavier" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:765324639@gmail.com" title="E-Mail &rarr; mailto:765324639@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用"><span class="nav-number">1.</span> <span class="nav-text">使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实现简介"><span class="nav-number">2.</span> <span class="nav-text">实现简介</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">  <a href="http://beian.miit.gov.cn/" rel="noopener" target="_blank">黑ICP备19000073号-1 </a>&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">郑伟</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
